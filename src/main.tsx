@@ -11,7 +11,7 @@ Devvit.configure({
 
 // Add a custom post type for Multiplayer Games.
 Devvit.addCustomPostType({
-  name: 'Multiplayer Games',
+  name: 'SocialDrid Games',
   height: 'tall',
   render: (context) => {
     // Load the actual Reddit username once.
@@ -128,7 +128,7 @@ Devvit.addCustomPostType({
                 <text size="medium" weight="bold" fontFamily="Open Sans">{' '}{username ?? ''}</text>
               </hstack>
               <hstack>
-                <text size="medium" fontFamily="Open Sans">Current counter:</text>
+                <text size="medium" fontFamily="Open Sans">-------------:</text>
                 <text size="medium" weight="bold" fontFamily="Open Sans">{' '}{counter ?? ''}</text>
               </hstack>
             </vstack>
