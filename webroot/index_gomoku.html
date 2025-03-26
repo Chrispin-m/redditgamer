@@ -6,74 +6,103 @@
     <title>Gomoku</title>
     <link rel="stylesheet" href="styles.css" />
     <style>
-      /* Responsive Gomoku Board */
+      /* General Styles */
+      body {
+        text-align: center;
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        background: #f8f8f8;
+      }
+
+      h1 {
+        margin-bottom: 10px;
+      }
+
+      #gomokuInstructions {
+        max-width: 500px;
+        margin-bottom: 15px;
+        font-size: 1em;
+        padding: 10px;
+        background: rgba(255, 255, 255, 0.9);
+        color: #333;
+        border-radius: 5px;
+        text-align: center;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      }
+
+      /* Gomoku Board */
       #gomokuBoard {
         display: grid;
         grid-template-columns: repeat(15, 1fr);
         gap: 2px;
-        max-width: 90vw;
-        max-height: 90vw;
-        aspect-ratio: 1;
-        margin: auto;
+        width: 90vw; /* Scales to fit screen */
+        max-width: 600px;
+        aspect-ratio: 1; /* Keeps it square */
+        background: #d3a15c;
+        padding: 5px;
+        border-radius: 10px;
+        border: 5px solid #8b5a2b;
       }
+
       .gomoku-cell {
         background: #eee;
         border: 1px solid #333;
         cursor: pointer;
-        height: 6vw;
-        width: 6vw;
-        max-height: 40px;
-        max-width: 40px;
+        height: 0;
+        padding-bottom: 100%; /* Makes cells square */
         position: relative;
       }
+
       .gomoku-stone {
         border-radius: 50%;
-        height: 100%;
-        width: 100%;
+        position: absolute;
+        width: 80%;
+        height: 80%;
+        top: 10%;
+        left: 10%;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: bold;
         font-size: 1em;
+        transition: transform 0.2s ease;
       }
+
       .black-stone {
         background-color: #000;
         color: #fff;
       }
+
       .white-stone {
         background-color: #fff;
         color: #000;
         border: 1px solid #333;
       }
+
+      /* Status & Restart Button */
       #gomokuStatus {
-        margin-top: 15px;
         font-size: 1.2em;
-        text-align: center;
+        margin-top: 15px;
       }
-      #gomokuInstructions {
-        margin: 10px auto;
-        max-width: 600px;
-        font-size: 1em;
-        background: rgba(255,255,255,0.8);
-        color: #333;
-        padding: 10px;
-        border-radius: 5px;
-        text-align: center;
-      }
+
       #gomokuRestart {
-        display: block;
-        margin: 15px auto;
-        padding: 10px 20px;
+        padding: 12px 20px;
         font-size: 1em;
+        cursor: pointer;
         border: none;
         border-radius: 5px;
-        background-color: #fff;
-        color: #333;
-        cursor: pointer;
+        background-color: #007bff;
+        color: white;
         transition: background 0.3s ease;
       }
+
       #gomokuRestart:hover {
-        background-color: #e0e0e0;
+        background-color: #0056b3;
       }
 
       /* Winner Modal */
@@ -89,33 +118,49 @@
         align-items: center;
         text-align: center;
       }
+
       .modal-content {
         background: white;
         padding: 20px;
         border-radius: 10px;
         font-size: 1.5em;
       }
+
       .modal button {
         margin-top: 10px;
         padding: 10px;
         font-size: 1em;
         cursor: pointer;
         border: none;
-        background: #007bff;
+        background: #28a745;
         color: white;
         border-radius: 5px;
       }
+
       .modal button:hover {
-        background: #0056b3;
+        background: #218838;
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 600px) {
+        #gomokuBoard {
+          width: 95vw;
+        }
+        #gomokuInstructions {
+          font-size: 0.9em;
+        }
       }
     </style>
   </head>
   <body>
-    <h1 style="text-align: center;">Gomoku</h1>
+    <h1>Gomoku</h1>
+    
     <div id="gomokuInstructions">
       <p>Welcome to Gomoku! Click on an empty cell to place a stone. The first player to get five in a row wins! Black moves first.</p>
     </div>
+
     <div id="gomokuBoard"></div>
+    
     <div id="gomokuStatus">Current turn: Black</div>
     <button id="gomokuRestart">Restart Game</button>
 

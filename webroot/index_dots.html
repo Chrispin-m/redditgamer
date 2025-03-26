@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Ludo Classic (beta)</title>
   <style>
+    /* General Styles */
     body {
       background: #f0f4f8;
       font-family: Arial, sans-serif;
@@ -12,31 +13,49 @@
       margin: 0;
       padding: 20px;
       color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
     }
+
     h1 {
       font-size: 2.5em;
       margin-bottom: 20px;
       color: #007bff;
     }
+
+    /* Ludo Board */
     #ludoCanvas {
       background: #fff;
       border: 3px solid #333;
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      max-width: 90vw; /* Make it fit mobile screens */
+      max-height: 90vw;
+      aspect-ratio: 1;
       display: block;
-      margin: 20px auto;
     }
+
+    /* Dice Canvas */
     #diceCanvas {
       background: #fff;
       border: 2px solid #333;
       border-radius: 5px;
       display: block;
       margin: 10px auto;
-      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+      width: 15vw; 
+      height: 15vw;
+      max-width: 100px;
+      max-height: 100px;
     }
+
+    /* Controls */
     #controls {
       margin: 20px 0;
     }
+
     button {
       background: #007bff;
       color: #fff;
@@ -48,14 +67,18 @@
       cursor: pointer;
       transition: background 0.3s ease, transform 0.2s ease;
     }
+
     button:hover {
       background: #0056b3;
       transform: scale(1.05);
     }
+
     button:disabled {
       background: #ccc;
       cursor: not-allowed;
     }
+
+    /* Info Box */
     #info {
       margin-top: 20px;
       font-size: 1.2em;
@@ -66,15 +89,24 @@
       max-width: 600px;
       margin: 20px auto;
     }
+
     #diceResult, #turnInfo {
       font-weight: bold;
       margin: 10px 0;
     }
+
     #instructions {
       font-size: 0.9em;
       color: #666;
       line-height: 1.5;
     }
+
+    .highlight {
+      color: #ff4500;
+      font-weight: bold;
+    }
+
+    /* Winner Modal */
     #winModal {
       position: fixed;
       top: 0;
@@ -87,6 +119,7 @@
       justify-content: center;
       z-index: 1000;
     }
+
     #winModalContent {
       background: #fff;
       padding: 30px;
@@ -95,37 +128,59 @@
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
       animation: fadeIn 0.5s ease;
     }
+
     @keyframes fadeIn {
       from { opacity: 0; transform: scale(0.9); }
       to { opacity: 1; transform: scale(1); }
     }
+
     #winMessage {
       font-size: 2em;
       color: #28a745;
       margin-bottom: 20px;
     }
+
     #winModalContent button {
       background: #28a745;
       padding: 12px 30px;
       font-size: 1.2em;
     }
+
     #winModalContent button:hover {
       background: #218838;
     }
-    .highlight {
-      color: #ff4500;
-      font-weight: bold;
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      #ludoCanvas {
+        width: 95vw;
+      }
+      #info {
+        font-size: 1em;
+      }
+      button {
+        font-size: 1em;
+        padding: 10px 20px;
+      }
     }
   </style>
 </head>
 <body>
   <h1>Ludo Classic</h1>
+
+  <!-- Ludo Board -->
   <canvas id="ludoCanvas" width="600" height="600"></canvas>
+
+  <!-- Dice -->
   <canvas id="diceCanvas" width="100" height="100"></canvas>
+
+  <!-- Controls -->
   <div id="controls">
     <button id="rollDice">Roll Dice</button>
     <button id="endTurn" disabled>End Turn</button>
   </div>
+
+  <!-- Game Info -->
   <div id="info">
     <div id="diceResult">Dice: -</div>
     <div id="turnInfo">Current Turn: -</div>
@@ -136,12 +191,15 @@
       Be the first to get all 4 tokens to the finish to win!
     </p>
   </div>
+
+  <!-- Winner Modal -->
   <div id="winModal">
     <div id="winModalContent">
       <h2 id="winMessage"></h2>
       <button id="restartGame">Restart Game</button>
     </div>
   </div>
+
   <script src="script_dots.js"></script>
 </body>
 </html>
