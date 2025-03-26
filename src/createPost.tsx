@@ -6,13 +6,13 @@ Devvit.configure({
 
 // Add a menu item to create a new custom post.
 Devvit.addMenuItem({
-  label: 'Create New Multiplayer Games Post (with Web View)',
+  label: 'Create SocialGrid Games Post',
   location: 'subreddit',
   onPress: async (_event, context) => {
     const { reddit, ui } = context;
     const subreddit = await reddit.getCurrentSubreddit();
     const post = await reddit.submitPost({
-      title: 'Multiplayer Games',
+      title: 'SocialGrid Games',
       subredditName: subreddit.name,
       preview: (
         <vstack height="100%" width="100%" alignment="middle center">
