@@ -100,44 +100,108 @@ Devvit.addCustomPostType({
 
     return (
       <blocks>
-        <vstack grow padding="small">
+        <vstack
+          grow
+          padding="small"
+          backgroundGradient="linear-gradient(to bottom, #87CEEB, #4682B4)"
+        >
           <vstack grow alignment="middle center">
-            <text size="xlarge" weight="bold">
+            {/* Title with bold color and shadow */}
+            <text
+              size="xlarge"
+              weight="bold"
+              color="darkblue"
+              textShadow="1px 1px 2px #000000"
+              fontFamily="Roboto"
+            >
               Multiplayer Games
             </text>
             <spacer />
-            <vstack alignment="start middle">
+            <vstack
+              backgroundColor="#ffffff"
+              padding="small"
+              cornerRadius="small"
+              shadow="0px 2px 4px rgba(0, 0, 0, 0.1)"
+            >
               <hstack>
-                <text size="medium">Username:</text>
-                <text size="medium" weight="bold">{' '}{username ?? ''}</text>
+                <text size="medium" fontFamily="Open Sans">Username:</text>
+                <text size="medium" weight="bold" fontFamily="Open Sans">{' '}{username ?? ''}</text>
               </hstack>
               <hstack>
-                <text size="medium">Current counter:</text>
-                <text size="medium" weight="bold">{' '}{counter ?? ''}</text>
+                <text size="medium" fontFamily="Open Sans">Current counter:</text>
+                <text size="medium" weight="bold" fontFamily="Open Sans">{' '}{counter ?? ''}</text>
               </hstack>
             </vstack>
             <spacer />
+
             {!selectedGame ? (
-              <vstack alignment="middle center" gap="small">
-                <text size="medium">Select a game to play:</text>
-                <hstack gap="small">
-                  <button onPress={() => setSelectedGame('tictactoe')}>Tic Tac Toe</button>
-                  <button onPress={() => setSelectedGame('gomoku')}>Gomoku</button>
+              <vstack alignment="middle center" gap="medium">
+                <text size="medium" weight="bold" fontFamily="Roboto">Select a game to play:</text>
+                <hstack gap="medium" width="100%">
+                  <button
+                    appearance="primary"
+                    onPress={() => setSelectedGame('tictactoe')}
+                    hover={{ backgroundColor: '#ADD8E6' }}
+                  >
+                    Tic Tac Toe
+                  </button>
+                  <button
+                    appearance="primary"
+                    onPress={() => setSelectedGame('gomoku')}
+                    hover={{ backgroundColor: '#ADD8E6' }}
+                  >
+                    Gomoku
+                  </button>
+                  <button
+                    appearance="primary"
+                    onPress={() => setSelectedGame('dots')}
+                    hover={{ backgroundColor: '#ADD8E6' }}
+                  >
+                    Ludo(beta)
+                  </button>
                 </hstack>
-                <hstack gap="small">
-                  <button onPress={() => setSelectedGame('dots')}>Dots & Boxes</button>
-                  <button onPress={() => setSelectedGame('connect4')}>Connect Four</button>
-                </hstack>
-                <hstack gap="small">
-                  <button onPress={() => setSelectedGame('reaction')}>Reaction</button>
+                <hstack gap="medium" width="100%">
+                  <button
+                    appearance="primary"
+                    onPress={() => setSelectedGame('connect4')}
+                    hover={{ backgroundColor: '#ADD8E6' }}
+                  >
+                    Connect Four
+                  </button>
+                  <button
+                    appearance="primary"
+                    onPress={() => setSelectedGame('reaction')}
+                    hover={{ backgroundColor: '#ADD8E6' }}
+                  >
+                    Reaction
+                  </button>
                 </hstack>
               </vstack>
             ) : (
-              <>
-                <text size="medium">Game selected: {selectedGame}</text>
-                <spacer />
-                <button onPress={() => webView?.mount()}>Launch {selectedGame}</button>
-              </>
+              <vstack
+                alignment="middle center"
+                gap="small"
+                backgroundColor="#ffffff"
+                padding="medium"
+                cornerRadius="small"
+                border="1px solid #cccccc"
+                shadow="0px 2px 4px rgba(0, 0, 0, 0.1)"
+              >
+                <text size="medium" weight="bold" fontFamily="Roboto">Game selected: {selectedGame}</text>
+                <hstack gap="small">
+                  <button appearance="primary" onPress={() => webView?.mount()}>
+                    Launch {selectedGame}
+                  </button>
+                  <button
+                    appearance="secondary"
+                    onPress={() => setSelectedGame(null)}
+                    size="large"
+                    color="red"
+                  >
+                    Back
+                  </button>
+                </hstack>
+              </vstack>
             )}
           </vstack>
         </vstack>
