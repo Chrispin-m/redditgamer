@@ -6,44 +6,30 @@
     <title>Game Suite</title>
     <link rel="stylesheet" href="styles.css" />
     <style>
-      body {
-        background-color: #f5f5f5;
-        font-family: Arial, sans-serif;
-        padding: 20px;
-      }
-      #gameMenu {
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      }
-      #gameContainer {
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        margin-top: 20px;
-      }
-      .hidden {
-        display: none !important;
-      }
+      /* Basic styles for the game menu and container */
+      #gameMenu { padding: 20px; }
+      .game-options { display: flex; gap: 10px; margin-top: 10px; justify-content: center; }
+      .grid { display: grid; gap: 5px; }
+      .grid-3x3 { grid-template-columns: repeat(3, 1fr); }
+      .cell { padding: 20px; border: 1px solid #ccc; text-align: center; cursor: pointer; }
     </style>
-   
   </head>
   <body>
-    <h1>Choose a Game</h1>
-    <div id="gameMenu">
-      <div class="game-options">
-        <button onclick="selectGame('tictactoe')">Tic Tac Toe</button>
-        <button onclick="selectGame('gomoku')">Gomoku</button>
-        <button onclick="selectGame('dots')">Dots & Boxes</button>
-        <button onclick="selectGame('connect4')">Connect Four</button>
+    <!-- Game Screen (visible immediately) -->
+    <div id="gameScreen">
+      <div id="gameMenu">
+        <h2>Choose a Game</h2>
+        <div class="game-options">
+          <button id="btn-tictactoe">Tic Tac Toe</button>
+          <button id="btn-gomoku">Gomoku</button>
+          <button id="btn-dots">Dots & Boxes</button>
+          <button id="btn-connect4">Connect Four</button>
+        </div>
+      </div>
+      <div id="gameContainer">
+        <!-- Game content will be rendered dynamically here -->
       </div>
     </div>
-
-    <div id="gameContainer" class="hidden">
-      <!-- Games will be rendered here dynamically -->
-    </div>
-
     <script type="application/javascript" src="app.js"></script>
   </body>
 </html>

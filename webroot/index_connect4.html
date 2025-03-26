@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Connect 4</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      /* Connect 4 specific styles */
+      body {
+        text-align: center;
+      }
+      #connect4Board {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+        max-width: 420px;
+        margin: 20px auto;
+        padding: 10px;
+      }
+      .column {
+        display: flex;
+        flex-direction: column-reverse;
+        cursor: pointer;
+      }
+      .cell {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: #ddd;
+        border: 2px solid #333;
+      }
+      .red {
+        background: red;
+      }
+      .yellow {
+        background: yellow;
+      }
+      #connect4Status {
+        font-size: 1.2em;
+        margin: 15px 0;
+      }
+      #restartConnect4 {
+        padding: 10px 20px;
+        font-size: 1em;
+        cursor: pointer;
+        border: none;
+        background: #007bff;
+        color: white;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Connect 4</h1>
+    <div id="connect4Instructions">
+      <h3>How to Play:</h3>
+      <p>Players take turns dropping red or yellow discs into a 7-column grid.</p>
+      <p>The first to get 4 in a row (horizontally, vertically, or diagonally) wins!</p>
+    </div>
+    <div id="connect4Board"></div>
+    <div id="connect4Status">Player Red's Turn</div>
+    <button id="restartConnect4">Restart Game</button>
+    <script src="script_connect4.js"></script>
+  </body>
+</html>

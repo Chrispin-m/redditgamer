@@ -1,28 +1,30 @@
 (function() {
-  // Element references
+  // Get element references.
+  const gameScreen = document.getElementById('gameScreen');
   const gameMenu = document.getElementById('gameMenu');
   const gameContainer = document.getElementById('gameContainer');
 
-  // Local state variable
-  let state = null;
+  // Get buttons.
+  const btnTictactoe = document.getElementById('btn-tictactoe');
+  const btnGomoku = document.getElementById('btn-gomoku');
+  const btnDots = document.getElementById('btn-dots');
+  const btnConnect4 = document.getElementById('btn-connect4');
 
-  // Function to send messages to the parent Devvit app
+  // Local state for the game.
+  let gameState = null;
+
+  // Function to send messages to the parent Devvit app.
   function sendMessage(message) {
     window.parent.postMessage(message, '*');
   }
 
-  // Render the game based on the current state
+  // Render the game based on current gameState.
   function renderGame() {
-    gameContainer.innerHTML = ''; // Clear previous content
-    if (!state) {
-      gameContainer.innerHTML = '<p>Waiting for game state...</p>';
-      return;
-    }
-    if (!state.currentGame) {
-      gameContainer.innerHTML = '<p>Please select a game to play.</p>';
-      return;
-    }
-    switch (state.currentGame) {
+    if (!gameState) return;
+    // Clear previous content.
+    gameContainer.innerHTML = '';
+
+    switch (gameState.currentGame) {
       case 'tictactoe':
         renderTicTacToe();
         break;
@@ -40,57 +42,72 @@
     }
   }
 
-  // Render a Tic Tac Toe grid
+  // Render a Tic Tac Toe grid.
   function renderTicTacToe() {
-    if (!Array.isArray(state.tictactoe)) {
-      gameContainer.innerHTML = '<p>Tic Tac Toe state is not initialized.</p>';
-      return;
-    }
+    if (!Array.isArray(gameState.tictactoe)) return;
     const grid = document.createElement('div');
     grid.className = 'grid grid-3x3';
     grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
-    state.tictactoe.forEach((cell, index) => {
+
+    gameState.tictactoe.forEach((cell, index) => {
       const cellEl = document.createElement('div');
       cellEl.className = 'cell';
       cellEl.textContent = cell || '';
+      cellEl.setAttribute('data-index', index);
       cellEl.addEventListener('click', () => handleMove(index));
       grid.appendChild(cellEl);
     });
     gameContainer.appendChild(grid);
   }
 
-  // Handle an incoming game state message from the parent
+  // Update local state when a new game state is received.
   function handleGameState(newState) {
-    state = newState;
+    console.log('Received game state:', newState);
+    if (!newState) return;
+    gameState = newState;
     renderGame();
   }
 
-  // Handle a move on the current game (for Tic Tac Toe in this example)
+  // Send a move message when a cell is clicked.
   function handleMove(position) {
-    if (!state || !state.currentGame) return;
+    if (!gameState || !gameState.currentGame) return;
     sendMessage({
       type: 'gameAction',
       data: {
         type: 'move',
-        game: state.currentGame,
+        game: gameState.currentGame,
         position: position
       }
     });
   }
 
-  // Called when a game is selected via the buttons in the HTML
-  function selectGame(gameType) {
-    if (!gameType) return;
+  // Attach event listeners to game selection buttons.
+  btnTictactoe.addEventListener('click', () => {
     sendMessage({
       type: 'gameAction',
-      data: { type: 'changeGame', game: gameType }
+      data: { type: 'changeGame', game: 'tictactoe' }
     });
-    gameMenu.classList.add('hidden');
-    gameContainer.classList.remove('hidden');
-    renderGame(); // Render immediately with current state
-  }
+  });
+  btnGomoku.addEventListener('click', () => {
+    sendMessage({
+      type: 'gameAction',
+      data: { type: 'changeGame', game: 'gomoku' }
+    });
+  });
+  btnDots.addEventListener('click', () => {
+    sendMessage({
+      type: 'gameAction',
+      data: { type: 'changeGame', game: 'dots' }
+    });
+  });
+  btnConnect4.addEventListener('click', () => {
+    sendMessage({
+      type: 'gameAction',
+      data: { type: 'changeGame', game: 'connect4' }
+    });
+  });
 
-  // Listen for messages from the parent Devvit app
+  // Listen for messages from the parent Devvit app.
   window.addEventListener('message', (event) => {
     console.log('Received message:', event.data);
     if (event.data && event.data.type === 'gameState') {
@@ -98,11 +115,9 @@
     }
   });
 
-  // Request the initial state once the page has fully loaded
+  // On load, notify parent that web view is ready and request initial state.
   window.addEventListener('load', () => {
+    sendMessage({ type: 'webViewReady' });
     sendMessage({ type: 'requestState' });
   });
-
-  // Expose the selectGame function globally for HTML button onclick handlers
-  window.selectGame = selectGame;
 })();

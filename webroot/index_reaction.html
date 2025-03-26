@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reaction Speed</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body { text-align: center; font-family: Arial, sans-serif; }
+    #reactionInstructions {
+      background: lightyellow; padding: 10px; margin: 10px auto;
+      max-width: 500px; border-radius: 5px; color:black;
+    }
+    #reactionBoard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; max-width: 250px; margin: auto; }
+    .reaction-cell {
+      width: 50px; height: 50px; background: #ddd; display: flex;
+      align-items: center; justify-content: center; cursor: pointer;
+    }
+    .active { background: green; }
+    #leaderboard {
+      margin-top: 20px; padding: 10px; border: 1px solid #000; max-width: 500px;
+      margin: auto; background: #f9f9f9; color:black;
+    }
+  </style>
+</head>
+<body>
+  <h1>Reaction Speed</h1>
+  <div id="reactionInstructions">
+    <h3>How to Play:</h3>
+    <p>Click the highlighted square** as fast as possible for 20 seconds.</p>
+    <p>Your final score will be ranked on a leaderboard!</p>
+    <p><b>Fun Fact:</b> F1 drivers have a reaction time below 300ms! 🏎️</p>
+  </div>
+  <button id="startGame">Start</button>
+  <div id="reactionBoard"></div>
+  <div id="reactionScore"></div>
+  <h2>Leaderboard</h2>
+  <table id="leaderboard">
+    <tr><th>Player</th><th>Score</th><th>Avg Time (ms)</th><th>Median Time (ms)</th></tr>
+  </table>
+  <script src="script_reaction.js"></script>
+</body>
+</html>

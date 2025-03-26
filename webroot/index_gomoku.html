@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta charset="UTF-8" />
+    <title>Gomoku</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      /* Responsive Gomoku Board */
+      #gomokuBoard {
+        display: grid;
+        grid-template-columns: repeat(15, 1fr);
+        gap: 2px;
+        max-width: 90vw;
+        max-height: 90vw;
+        aspect-ratio: 1;
+        margin: auto;
+      }
+      .gomoku-cell {
+        background: #eee;
+        border: 1px solid #333;
+        cursor: pointer;
+        height: 6vw;
+        width: 6vw;
+        max-height: 40px;
+        max-width: 40px;
+        position: relative;
+      }
+      .gomoku-stone {
+        border-radius: 50%;
+        height: 100%;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1em;
+      }
+      .black-stone {
+        background-color: #000;
+        color: #fff;
+      }
+      .white-stone {
+        background-color: #fff;
+        color: #000;
+        border: 1px solid #333;
+      }
+      #gomokuStatus {
+        margin-top: 15px;
+        font-size: 1.2em;
+        text-align: center;
+      }
+      #gomokuInstructions {
+        margin: 10px auto;
+        max-width: 600px;
+        font-size: 1em;
+        background: rgba(255,255,255,0.8);
+        color: #333;
+        padding: 10px;
+        border-radius: 5px;
+        text-align: center;
+      }
+      #gomokuRestart {
+        display: block;
+        margin: 15px auto;
+        padding: 10px 20px;
+        font-size: 1em;
+        border: none;
+        border-radius: 5px;
+        background-color: #fff;
+        color: #333;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+      #gomokuRestart:hover {
+        background-color: #e0e0e0;
+      }
+
+      /* Winner Modal */
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+      .modal-content {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        font-size: 1.5em;
+      }
+      .modal button {
+        margin-top: 10px;
+        padding: 10px;
+        font-size: 1em;
+        cursor: pointer;
+        border: none;
+        background: #007bff;
+        color: white;
+        border-radius: 5px;
+      }
+      .modal button:hover {
+        background: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 style="text-align: center;">Gomoku</h1>
+    <div id="gomokuInstructions">
+      <p>Welcome to Gomoku! Click on an empty cell to place a stone. The first player to get five in a row wins! Black moves first.</p>
+    </div>
+    <div id="gomokuBoard"></div>
+    <div id="gomokuStatus">Current turn: Black</div>
+    <button id="gomokuRestart">Restart Game</button>
+
+    <!-- Winner Modal -->
+    <div id="winnerModal" class="modal">
+      <div class="modal-content">
+        <p id="winnerMessage"></p>
+        <button id="closeModal">OK</button>
+      </div>
+    </div>
+
+    <script type="application/javascript" src="script_gomoku.js"></script>
+  </body>
+</html>
