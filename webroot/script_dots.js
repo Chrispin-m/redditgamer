@@ -1,378 +1,329 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const CELL_SIZE = 40; // Each cell is 40x40 pixels
-    const BOARD_SIZE = 15 * CELL_SIZE; // 15x15 grid
-    const PLAYER_COLORS = ['red', 'green', 'yellow', 'blue'];
-    const SAFE_ZONES = [0, 8, 13, 21, 26, 34, 39, 47];
-    const START_POSITIONS = { red: 0, green: 13, yellow: 26, blue: 39 };
-    const HOME_ENTRANCE = { red: 50, green: 53, yellow: 56, blue: 59 };
-    const HOME_PATH_LENGTH = 6;
+  // --- DOM Elements ---
+  const ludoCanvas = document.getElementById('ludoCanvas');
+  const ctx = ludoCanvas.getContext('2d');
+  const diceCanvas = document.getElementById('diceCanvas');
+  const diceCtx = diceCanvas.getContext('2d');
+  const rollDiceBtn = document.getElementById('rollDice');
+  const endTurnBtn = document.getElementById('endTurn');
+  const diceResultElem = document.getElementById('diceResult');
+  const turnInfoElem = document.getElementById('turnInfo');
+  const winModal = document.getElementById('winModal');
+  const winMessageElem = document.getElementById('winMessage');
+  const restartGameBtn = document.getElementById('restartGame');
 
-    // DOM Elements
-    const ludoCanvas = document.getElementById('ludoCanvas');
-    const ctx = ludoCanvas.getContext('2d');
-    const diceCanvas = document.getElementById('diceCanvas');
-    const diceCtx = diceCanvas.getContext('2d');
-    const rollDiceBtn = document.getElementById('rollDice');
-    const endTurnBtn = document.getElementById('endTurn');
-    const diceResultElem = document.getElementById('diceResult');
-    const turnInfoElem = document.getElementById('turnInfo');
-    const winModal = document.getElementById('winModal');
-    const winMessageElem = document.getElementById('winMessage');
-    const restartGameBtn = document.getElementById('restartGame');
+  // --- Game Constants ---
+  const boardSize = 600;
+  const cellSize = boardSize / 15; // 15x15 grid
+  const trackPositions = 52;
+  const homeColumnLength = 6;
 
-    // Game State
-    let gameState = {
-        players: PLAYER_COLORS.map(color => ({
-            color,
-            tokens: Array(4).fill().map((_, i) => ({
-                id: `${color}-${i}`,
-                pathPosition: -1, // -1 = in home, -2 = finished
-                homePath: 0,
-                element: null
-            })),
-            finished: 0
-        })),
-        currentPlayer: 0,
-        diceValue: 0,
-        movesLeft: 0,
-        selectedToken: null,
-        gameActive: true
+  // --- Player Definitions ---
+  const players = [
+    {
+      id: 'red',
+      color: 'red',
+      home: { x: cellSize * 2, y: cellSize * 2 },
+      startPos: 0,
+      homeEntry: 50,
+      homeColumnStart: 52,
+      safeZones: [0, 8, 13, 21, 26, 34, 39, 47, 50]
+    },
+    {
+      id: 'green',
+      color: 'green',
+      home: { x: boardSize - cellSize * 6, y: cellSize * 2 },
+      startPos: 13,
+      homeEntry: 11,
+      homeColumnStart: 58,
+      safeZones: [13, 8, 21, 26, 34, 39, 47, 50, 11]
+    },
+    {
+      id: 'yellow',
+      color: 'yellow',
+      home: { x: cellSize * 2, y: boardSize - cellSize * 6 },
+      startPos: 26,
+      homeEntry: 24,
+      homeColumnStart: 64,
+      safeZones: [26, 8, 13, 21, 34, 39, 47, 50, 24]
+    },
+    {
+      id: 'blue',
+      color: 'blue',
+      home: { x: boardSize - cellSize * 6, y: boardSize - cellSize * 6 },
+      startPos: 39,
+      homeEntry: 37,
+      homeColumnStart: 70,
+      safeZones: [39, 8, 13, 21, 26, 34, 47, 50, 37]
+    }
+  ];
+
+  // --- Track and Home Columns ---
+  const track = [];
+  const centerX = boardSize / 2;
+  const centerY = boardSize / 2;
+  const radius = 250;
+  for (let i = 0; i < trackPositions; i++) {
+    const angle = (2 * Math.PI * i) / trackPositions - Math.PI / 2;
+    const x = centerX + radius * Math.cos(angle) - cellSize / 2;
+    const y = centerY + radius * Math.sin(angle) - cellSize / 2;
+    track.push({ x, y });
+  }
+
+  const homeColumns = {};
+  players.forEach(player => {
+    homeColumns[player.id] = [];
+    const startX = player.id === 'red' || player.id === 'green' ? centerX - cellSize * 3 : centerX + cellSize * 2;
+    const startY = player.id === 'red' || player.id === 'yellow' ? centerY - cellSize * 3 : centerY + cellSize * 2;
+    for (let i = 0; i < homeColumnLength; i++) {
+      const x = player.id === 'red' || player.id === 'green' ? startX + i * cellSize : startX - i * cellSize;
+      const y = player.id === 'red' || player.id === 'yellow' ? startY + i * cellSize : startY - i * cellSize;
+      homeColumns[player.id].push({ x, y });
+    }
+  });
+
+  // --- Game State ---
+  let gameState = {};
+  let diceValue = 0;
+  let diceRolling = false;
+  let extraTurn = false;
+
+  // --- Initialization ---
+  function initGame() {
+    gameState = {
+      currentPlayerIndex: 0,
+      tokens: {},
+      finished: {},
+      track,
+      status: 'active'
     };
+    players.forEach(player => {
+      gameState.tokens[player.id] = Array(4).fill(null).map((_, i) => ({
+        pos: -1, // -1 = home, 0-51 = track, 52+ = home column
+        id: `${player.id}${i + 1}`
+      }));
+      gameState.finished[player.id] = 0;
+    });
+    turnInfoElem.textContent = `Current Turn: ${players[0].id.toUpperCase()}`;
+    diceResultElem.textContent = `Dice: -`;
+    drawBoard();
+  }
 
-    // Track Coordinates (pre-calculated positions)
-    const trackCoordinates = Array(52).fill().map((_, i) => {
-        // Complex board path calculation
-        // Implementation of actual Ludo board path
-        const row = Math.floor(i / 14);
-        const col = i % 14;
-        let x, y;
-        
-        if (i < 14) { // Top row
-            x = CELL_SIZE * (13 - col);
-            y = CELL_SIZE;
-        } else if (i < 28) { // Right column
-            x = CELL_SIZE * 13;
-            y = CELL_SIZE * (col + 2);
-        } else if (i < 42) { // Bottom row
-            x = CELL_SIZE * (col + 1);
-            y = CELL_SIZE * 13;
-        } else { // Left column
-            x = CELL_SIZE;
-            y = CELL_SIZE * (15 - col);
-        }
-        
-        return { x, y };
+  // --- Drawing Functions ---
+  function drawBoard() {
+    ctx.clearRect(0, 0, boardSize, boardSize);
+    ctx.fillStyle = '#f0f4f8';
+    ctx.fillRect(0, 0, boardSize, boardSize);
+
+    // Draw track
+    track.forEach((pos, index) => {
+      ctx.beginPath();
+      ctx.arc(pos.x + cellSize / 2, pos.y + cellSize / 2, cellSize / 2 - 2, 0, 2 * Math.PI);
+      ctx.fillStyle = players.some(p => p.safeZones.includes(index)) ? '#ddd' : '#fff';
+      ctx.fill();
+      ctx.strokeStyle = '#333';
+      ctx.stroke();
     });
 
-    // Initialize Game
-    function initGame() {
-        drawBoard();
-        drawDice(1);
-        updateTurnDisplay();
-        setupEventListeners();
-    }
-
-    function drawBoard() {
-        ctx.clearRect(0, 0, BOARD_SIZE, BOARD_SIZE);
-        
-        // Draw main board
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, BOARD_SIZE, BOARD_SIZE);
-
-        // Draw colored bases
-        drawBase(1, 1, 'red');
-        drawBase(10, 1, 'green');
-        drawBase(1, 10, 'yellow');
-        drawBase(10, 10, 'blue');
-
-        // Draw track
-        trackCoordinates.forEach((pos, i) => {
-            ctx.fillStyle = SAFE_ZONES.includes(i) ? '#ffeb3b' : '#e0e0e0';
-            ctx.fillRect(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
-            ctx.strokeStyle = '#000000';
-            ctx.strokeRect(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
-        });
-
-        // Draw tokens
-        gameState.players.forEach(player => {
-            player.tokens.forEach(token => {
-                drawToken(token);
-            });
-        });
-    }
-
-    function drawBase(x, y, color) {
-        const baseSize = CELL_SIZE * 3;
-        ctx.fillStyle = color;
-        ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, baseSize, baseSize);
-    }
-
-    function drawToken(token) {
-        const player = gameState.players.find(p => p.tokens.includes(token));
-        let { x, y } = getTokenPosition(token);
-        
+    // Draw home columns
+    players.forEach(player => {
+      homeColumns[player.id].forEach((pos, index) => {
         ctx.beginPath();
-        ctx.arc(x + CELL_SIZE/2, y + CELL_SIZE/2, CELL_SIZE/2 - 2, 0, Math.PI * 2);
-        ctx.fillStyle = player.color;
+        ctx.rect(pos.x, pos.y, cellSize, cellSize);
+        ctx.fillStyle = index === homeColumnLength - 1 ? '#ffd700' : player.color + '33';
         ctx.fill();
-        ctx.strokeStyle = '#000000';
+        ctx.strokeStyle = '#333';
         ctx.stroke();
-    }
+      });
+    });
 
-    function getTokenPosition(token) {
-        if (token.pathPosition === -1) { // In home
-            const player = gameState.players.find(p => p.tokens.includes(token));
-            const basePositions = {
-                red: { x: 1, y: 1 },
-                green: { x: 10, y: 1 },
-                yellow: { x: 1, y: 10 },
-                blue: { x: 10, y: 10 }
-            };
-            const index = player.tokens.indexOf(token);
-            return {
-                x: (basePositions[player.color].x + (index % 2)) * CELL_SIZE,
-                y: (basePositions[player.color].y + Math.floor(index / 2)) * CELL_SIZE
-            };
+    // Draw tokens
+    players.forEach(player => {
+      gameState.tokens[player.id].forEach(token => {
+        if (token.pos === -1) {
+          const homeX = player.home.x + Math.random() * (cellSize * 3);
+          const homeY = player.home.y + Math.random() * (cellSize * 3);
+          drawToken(homeX, homeY, cellSize * 0.8, player.color, token.id);
+        } else if (token.pos >= 0 && token.pos < trackPositions) {
+          const pos = track[token.pos];
+          drawToken(pos.x, pos.y, cellSize, player.color, token.id);
+        } else if (token.pos >= player.homeColumnStart && token.pos < player.homeColumnStart + homeColumnLength) {
+          const homePos = token.pos - player.homeColumnStart;
+          const pos = homeColumns[player.id][homePos];
+          drawToken(pos.x, pos.y, cellSize, player.color, token.id);
         }
-        
-        if (token.pathPosition >= 0) { // On main track
-            return trackCoordinates[token.pathPosition];
-        }
-        
-        // In home path
-        const playerColor = gameState.players.find(p => p.tokens.includes(token)).color;
-        const homePathStart = HOME_ENTRANCE[playerColor];
-        const homePathDirection = playerColor === 'red' || playerColor === 'blue' ? 'vertical' : 'horizontal';
-        
-        if (homePathDirection === 'vertical') {
-            return {
-                x: trackCoordinates[homePathStart].x,
-                y: trackCoordinates[homePathStart].y + (token.homePath + 1) * CELL_SIZE
-            };
-        }
-        
-        return {
-            x: trackCoordinates[homePathStart].x + (token.homePath + 1) * CELL_SIZE,
-            y: trackCoordinates[homePathStart].y
-        };
+      });
+    });
+  }
+
+  function drawToken(x, y, size, color, label) {
+    ctx.beginPath();
+    ctx.arc(x + size / 2, y + size / 2, size / 2 - 2, 0, 2 * Math.PI);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = '#333';
+    ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.font = `${size / 3}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x + size / 2, y + size / 2);
+  }
+
+  // --- Dice Functions ---
+  function drawDice(value) {
+    diceCtx.clearRect(0, 0, diceCanvas.width, diceCanvas.height);
+    diceCtx.fillStyle = '#fff';
+    diceCtx.fillRect(0, 0, diceCanvas.width, diceCanvas.height);
+    diceCtx.strokeStyle = '#333';
+    diceCtx.lineWidth = 2;
+    diceCtx.strokeRect(0, 0, diceCanvas.width, diceCanvas.height);
+    diceCtx.fillStyle = '#333';
+    const pip = (x, y) => {
+      diceCtx.beginPath();
+      diceCtx.arc(x, y, 5, 0, 2 * Math.PI);
+      diceCtx.fill();
+    };
+    switch (value) {
+      case 1: pip(50, 50); break;
+      case 2: pip(30, 30); pip(70, 70); break;
+      case 3: pip(30, 30); pip(50, 50); pip(70, 70); break;
+      case 4: pip(30, 30); pip(70, 30); pip(30, 70); pip(70, 70); break;
+      case 5: pip(30, 30); pip(70, 30); pip(50, 50); pip(30, 70); pip(70, 70); break;
+      case 6: pip(30, 30); pip(70, 30); pip(30, 50); pip(70, 50); pip(30, 70); pip(70, 70); break;
+    }
+  }
+
+  function animateDiceRoll() {
+    diceRolling = true;
+    const start = performance.now();
+    function roll() {
+      const now = performance.now();
+      if (now - start < 1000) {
+        diceValue = Math.floor(Math.random() * 6) + 1;
+        drawDice(diceValue);
+        requestAnimationFrame(roll);
+      } else {
+        diceRolling = false;
+        drawDice(diceValue);
+        diceResultElem.textContent = `Dice: ${diceValue}`;
+        extraTurn = diceValue === 6;
+        endTurnBtn.disabled = false;
+      }
+    }
+    roll();
+  }
+
+  rollDiceBtn.addEventListener('click', () => {
+    if (!diceRolling && gameState.status === 'active') {
+      rollDiceBtn.disabled = true;
+      endTurnBtn.disabled = true;
+      animateDiceRoll();
+    }
+  });
+
+  // --- Token Movement ---
+  function moveToken() {
+    const player = players[gameState.currentPlayerIndex];
+    const tokensArr = gameState.tokens[player.id];
+    let moved = false;
+
+    // Bring token out on 6
+    if (diceValue === 6) {
+      const homeToken = tokensArr.find(t => t.pos === -1);
+      if (homeToken) {
+        homeToken.pos = player.startPos;
+        captureOpponent(player, homeToken.pos);
+        moved = true;
+      }
     }
 
-    // Dice Functions
-    function drawDice(value) {
-        diceCtx.clearRect(0, 0, 100, 100);
-        diceCtx.fillStyle = '#ffffff';
-        diceCtx.fillRect(0, 0, 100, 100);
-        diceCtx.strokeStyle = '#000000';
-        diceCtx.strokeRect(0, 0, 100, 100);
-        
-        diceCtx.fillStyle = '#000000';
-        const positions = {
-            1: [[50, 50]],
-            2: [[30, 30], [70, 70]],
-            3: [[30, 30], [50, 50], [70, 70]],
-            4: [[30, 30], [70, 30], [30, 70], [70, 70]],
-            5: [[30, 30], [70, 30], [50, 50], [30, 70], [70, 70]],
-            6: [[30, 30], [70, 30], [30, 50], [70, 50], [30, 70], [70, 70]]
-        };
-        
-        positions[value].forEach(pos => {
-            diceCtx.beginPath();
-            diceCtx.arc(pos[0], pos[1], 6, 0, Math.PI * 2);
-            diceCtx.fill();
-        });
-    }
+    // Move token on track or in home column
+    if (!moved) {
+      const movableTokens = tokensArr.filter(t => t.pos >= 0 && t.pos !== -1);
+      if (movableTokens.length > 0) {
+        const token = movableTokens[0]; // Simplified: move first movable token
+        const currentPos = token.pos;
+        let newPos;
 
-    async function rollDice() {
-        if (!gameState.gameActive) return;
-        
-        rollDiceBtn.disabled = true;
-        const rolls = Math.floor(Math.random() * 5) + 5;
-        
-        for (let i = 0; i < rolls; i++) {
-            gameState.diceValue = Math.floor(Math.random() * 6) + 1;
-            drawDice(gameState.diceValue);
-            await new Promise(r => setTimeout(r, 100));
-        }
-        
-        diceResultElem.textContent = `Dice: ${gameState.diceValue}`;
-        processDiceResult();
-    }
-
-    function processDiceResult() {
-        const currentPlayer = gameState.players[gameState.currentPlayer];
-        const movableTokens = currentPlayer.tokens.filter(token => 
-            canMoveToken(currentPlayer.color, token, gameState.diceValue)
-        );
-
-        if (movableTokens.length === 0) {
-            endTurn();
-            return;
-        }
-
-        gameState.movesLeft = gameState.diceValue === 6 ? 2 : 1;
-        highlightMovableTokens(movableTokens);
-    }
-
-    function canMoveToken(color, token, dice) {
-        if (token.pathPosition === -2) return false; // Already finished
-        
-        if (token.pathPosition === -1) { // In home
-            return dice === 6 && canExitHome(color);
-        }
-        
-        if (isInHomePath(token)) {
-            return token.homePath + dice <= HOME_PATH_LENGTH;
-        }
-        
-        const newPosition = token.pathPosition + dice;
-        return newPosition <= HOME_ENTRANCE[color];
-    }
-
-    function canExitHome(color) {
-        const startPos = START_POSITIONS[color];
-        return !gameState.players.some(player => 
-            player.tokens.some(t => t.pathPosition === startPos)
-        );
-    }
-
-    function highlightMovableTokens(tokens) {
-        tokens.forEach(token => {
-            const pos = getTokenPosition(token);
-            ctx.strokeStyle = '#00ff00';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
-        });
-    }
-
-    // Token Movement
-    function handleTokenClick(token) {
-        if (!gameState.gameActive || !isTokenMovable(token)) return;
-        
-        moveToken(token);
-        gameState.movesLeft--;
-        
-        if (gameState.movesLeft > 0 && gameState.diceValue === 6) {
-            processDiceResult();
+        if (currentPos < trackPositions) {
+          const stepsToHome = (player.homeEntry - currentPos + trackPositions) % trackPositions;
+          if (currentPos <= player.homeEntry && currentPos + diceValue > player.homeEntry) {
+            newPos = player.homeColumnStart + (currentPos + diceValue - player.homeEntry - 1);
+          } else {
+            newPos = (currentPos + diceValue) % trackPositions;
+          }
         } else {
-            endTurn();
+          newPos = currentPos + diceValue;
         }
-    }
 
-    function moveToken(token) {
-        const playerColor = gameState.players[gameState.currentPlayer].color;
-        
-        if (token.pathPosition === -1) { // Exiting home
-            token.pathPosition = START_POSITIONS[playerColor];
-        } else if (isInHomePath(token)) {
-            token.homePath += gameState.diceValue;
-            if (token.homePath === HOME_PATH_LENGTH) {
-                token.pathPosition = -2;
-                gameState.players[gameState.currentPlayer].finished++;
-            }
-        } else {
-            const newPosition = token.pathPosition + gameState.diceValue;
-            if (newPosition > HOME_ENTRANCE[playerColor]) {
-                enterHomePath(token, newPosition - HOME_ENTRANCE[playerColor]);
-            } else {
-                token.pathPosition = newPosition;
-                checkCollision(token);
-            }
+        if (newPos < player.homeColumnStart + homeColumnLength) {
+          token.pos = newPos;
+          if (newPos < trackPositions) {
+            captureOpponent(player, newPos);
+          }
+          moved = true;
         }
-        
-        checkWinCondition();
-        drawBoard();
+
+        // Check if token finished
+        if (newPos === player.homeColumnStart + homeColumnLength - 1) {
+          gameState.finished[player.id]++;
+          token.pos = -2; // Finished
+          if (gameState.finished[player.id] === tokensArr.length) {
+            gameState.status = 'finished';
+            showWinModal(`${player.id.toUpperCase()} wins!`);
+          }
+        }
+      }
     }
 
-    function enterHomePath(token, steps) {
-        token.pathPosition = -3; // Special state for home path
-        token.homePath = steps;
-    }
+    return moved;
+  }
 
-    function checkCollision(movedToken) {
-        const currentPlayer = gameState.players[gameState.currentPlayer];
-        gameState.players.forEach(player => {
-            if (player === currentPlayer) return;
-            
-            player.tokens.forEach(token => {
-                if (token.pathPosition === movedToken.pathPosition && 
-                    !SAFE_ZONES.includes(token.pathPosition)) {
-                    // Send back to home
-                    token.pathPosition = -1;
-                }
-            });
+  function captureOpponent(player, position) {
+    if (player.safeZones.includes(position)) return;
+    players.forEach(other => {
+      if (other.id !== player.id) {
+        const opponentTokens = gameState.tokens[other.id];
+        opponentTokens.forEach(token => {
+          if (token.pos === position) {
+            token.pos = -1;
+          }
         });
-    }
+      }
+    });
+  }
 
-    function checkWinCondition() {
-        const currentPlayer = gameState.players[gameState.currentPlayer];
-        if (currentPlayer.finished === 4) {
-            gameState.gameActive = false;
-            showWinModal(`${currentPlayer.color.toUpperCase()} WINS!`);
-        }
+  function endTurn() {
+    const moved = moveToken();
+    drawBoard();
+    if (!extraTurn || !moved) {
+      gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % players.length;
     }
+    extraTurn = false;
+    turnInfoElem.textContent = `Current Turn: ${players[gameState.currentPlayerIndex].id.toUpperCase()}`;
+    diceResultElem.textContent = `Dice: -`;
+    rollDiceBtn.disabled = false;
+    endTurnBtn.disabled = true;
+  }
 
-    // Turn Management
-    function endTurn() {
-        gameState.currentPlayer = (gameState.currentPlayer + 1) % 4;
-        gameState.diceValue = 0;
-        rollDiceBtn.disabled = false;
-        updateTurnDisplay();
-        drawBoard();
+  endTurnBtn.addEventListener('click', () => {
+    if (!diceRolling) {
+      endTurn();
     }
+  });
 
-    function updateTurnDisplay() {
-        turnInfoElem.textContent = `Current Turn: ${gameState.players[gameState.currentPlayer].color.toUpperCase()}`;
-    }
+  // --- Win Modal ---
+  function showWinModal(message) {
+    winMessageElem.textContent = message;
+    winModal.style.display = 'flex';
+  }
 
-    // Event Listeners
-    function setupEventListeners() {
-        rollDiceBtn.addEventListener('click', rollDice);
-        restartGameBtn.addEventListener('click', resetGame);
-        ludoCanvas.addEventListener('click', handleCanvasClick);
-    }
-
-    function handleCanvasClick(e) {
-        const rect = ludoCanvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        
-        gameState.players[gameState.currentPlayer].tokens.forEach(token => {
-            const pos = getTokenPosition(token);
-            if (x >= pos.x && x <= pos.x + CELL_SIZE &&
-                y >= pos.y && y <= pos.y + CELL_SIZE) {
-                handleTokenClick(token);
-            }
-        });
-    }
-
-    // Win Modal
-    function showWinModal(message) {
-        winMessageElem.textContent = message;
-        winModal.style.display = 'flex';
-    }
-
-    function resetGame() {
-        gameState = {
-            players: PLAYER_COLORS.map(color => ({
-                color,
-                tokens: Array(4).fill().map((_, i) => ({
-                    id: `${color}-${i}`,
-                    pathPosition: -1,
-                    homePath: 0,
-                    element: null
-                })),
-                finished: 0
-            })),
-            currentPlayer: 0,
-            diceValue: 0,
-            movesLeft: 0,
-            selectedToken: null,
-            gameActive: true
-        };
-        
-        winModal.style.display = 'none';
-        initGame();
-    }
-
+  restartGameBtn.addEventListener('click', () => {
     initGame();
+    winModal.style.display = 'none';
+  });
+
+  // --- Start Game ---
+  initGame();
 });

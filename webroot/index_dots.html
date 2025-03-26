@@ -1,91 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classic Ludo Game</title>
-    <style>
-        body {
-            background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        #gameContainer {
-            position: relative;
-            margin: 20px;
-        }
-        canvas {
-            border: 2px solid #333;
-            border-radius: 10px;
-        }
-        #controls {
-            margin: 20px;
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-        #info {
-            font-size: 18px;
-            margin: 10px;
-        }
-        #winModal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            justify-content: center;
-            align-items: center;
-        }
-        #winModalContent {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            text-align: center;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Ludo Classic</title>
+  <style>
+    body {
+      background: #f0f4f8;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+      color: #007bff;
+    }
+    #ludoCanvas {
+      background: #fff;
+      border: 3px solid #333;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      display: block;
+      margin: 20px auto;
+    }
+    #diceCanvas {
+      background: #fff;
+      border: 2px solid #333;
+      border-radius: 5px;
+      display: block;
+      margin: 10px auto;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+    #controls {
+      margin: 20px 0;
+    }
+    button {
+      background: #007bff;
+      color: #fff;
+      border: none;
+      padding: 12px 25px;
+      font-size: 1.1em;
+      margin: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+    button:hover {
+      background: #0056b3;
+      transform: scale(1.05);
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    #info {
+      margin-top: 20px;
+      font-size: 1.2em;
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      margin: 20px auto;
+    }
+    #diceResult, #turnInfo {
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    #instructions {
+      font-size: 0.9em;
+      color: #666;
+      line-height: 1.5;
+    }
+    #winModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    #winModalContent {
+      background: #fff;
+      padding: 30px;
+      border-radius: 15px;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+      animation: fadeIn 0.5s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    #winMessage {
+      font-size: 2em;
+      color: #28a745;
+      margin-bottom: 20px;
+    }
+    #winModalContent button {
+      background: #28a745;
+      padding: 12px 30px;
+      font-size: 1.2em;
+    }
+    #winModalContent button:hover {
+      background: #218838;
+    }
+    .highlight {
+      color: #ff4500;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-    <h1>Classic Ludo Game</h1>
-    <div id="gameContainer">
-        <canvas id="ludoCanvas" width="600" height="600"></canvas>
-        <canvas id="diceCanvas" width="100" height="100"></canvas>
+  <h1>Ludo Classic</h1>
+  <canvas id="ludoCanvas" width="600" height="600"></canvas>
+  <canvas id="diceCanvas" width="100" height="100"></canvas>
+  <div id="controls">
+    <button id="rollDice">Roll Dice</button>
+    <button id="endTurn" disabled>End Turn</button>
+  </div>
+  <div id="info">
+    <div id="diceResult">Dice: -</div>
+    <div id="turnInfo">Current Turn: -</div>
+    <p id="instructions">
+      Welcome to Ludo Classic! Roll the dice to move your tokens. Roll a <span class="highlight">6</span> to bring a token out of home.
+      Move around the track, capture opponent tokens by landing on their position (except in <span class="highlight">safe zones</span>),
+      and enter your home column to finish. You get an extra turn when you roll a <span class="highlight">6</span>.
+      Be the first to get all 4 tokens to the finish to win!
+    </p>
+  </div>
+  <div id="winModal">
+    <div id="winModalContent">
+      <h2 id="winMessage"></h2>
+      <button id="restartGame">Restart Game</button>
     </div>
-    <div id="controls">
-        <button id="rollDice">Roll Dice</button>
-        <button id="endTurn" disabled>End Turn</button>
-    </div>
-    <div id="info">
-        <div id="diceResult">Dice: -</div>
-        <div id="turnInfo">Current Turn: Red</div>
-    </div>
-    <div id="winModal">
-        <div id="winModalContent">
-            <h2 id="winMessage"></h2>
-            <button onclick="window.location.reload()">New Game</button>
-        </div>
-    </div>
-    <script src="script_dots.js"></script>
+  </div>
+  <script src="script_dots.js"></script>
 </body>
 </html>
