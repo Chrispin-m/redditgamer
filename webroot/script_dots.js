@@ -1,329 +1,547 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // --- DOM Elements ---
-  const ludoCanvas = document.getElementById('ludoCanvas');
-  const ctx = ludoCanvas.getContext('2d');
-  const diceCanvas = document.getElementById('diceCanvas');
-  const diceCtx = diceCanvas.getContext('2d');
-  const rollDiceBtn = document.getElementById('rollDice');
-  const endTurnBtn = document.getElementById('endTurn');
-  const diceResultElem = document.getElementById('diceResult');
-  const turnInfoElem = document.getElementById('turnInfo');
-  const winModal = document.getElementById('winModal');
-  const winMessageElem = document.getElementById('winMessage');
-  const restartGameBtn = document.getElementById('restartGame');
+    // Dice class to manage rolling and turn logic
+    class Dice {
+        type = 1; // 1: Red, 2: Green, 3: Yellow, 4: Blue
+        count = 0;
+        r = new Red();
+        g = new Green();
+        y = new Yellow();
+        b = new Blue();
+        rctns = [];
+        gctns = [];
+        yctns = [];
+        bctns = [];
 
-  // --- Game Constants ---
-  const boardSize = 600;
-  const cellSize = boardSize / 15; // 15x15 grid
-  const trackPositions = 52;
-  const homeColumnLength = 6;
+        roll() {
+            const msg = document.getElementById('message');
+            // Update message based on current player
+            if (this.type === 1) {
+                msg.innerHTML = 'Red';
+                msg.style.color = 'Red';
+            } else if (this.type === 2) {
+                msg.innerHTML = 'Green';
+                msg.style.color = 'Green';
+            } else if (this.type === 3) {
+                msg.innerHTML = 'Yellow';
+                msg.style.color = 'rgb(255, 200, 0)';
+            } else if (this.type === 4) {
+                msg.innerHTML = 'Blue';
+                msg.style.color = 'Blue';
+            }
 
-  // --- Player Definitions ---
-  const players = [
-    {
-      id: 'red',
-      color: 'red',
-      home: { x: cellSize * 2, y: cellSize * 2 },
-      startPos: 0,
-      homeEntry: 50,
-      homeColumnStart: 52,
-      safeZones: [0, 8, 13, 21, 26, 34, 39, 47, 50]
-    },
-    {
-      id: 'green',
-      color: 'green',
-      home: { x: boardSize - cellSize * 6, y: cellSize * 2 },
-      startPos: 13,
-      homeEntry: 11,
-      homeColumnStart: 58,
-      safeZones: [13, 8, 21, 26, 34, 39, 47, 50, 11]
-    },
-    {
-      id: 'yellow',
-      color: 'yellow',
-      home: { x: cellSize * 2, y: boardSize - cellSize * 6 },
-      startPos: 26,
-      homeEntry: 24,
-      homeColumnStart: 64,
-      safeZones: [26, 8, 13, 21, 34, 39, 47, 50, 24]
-    },
-    {
-      id: 'blue',
-      color: 'blue',
-      home: { x: boardSize - cellSize * 6, y: boardSize - cellSize * 6 },
-      startPos: 39,
-      homeEntry: 37,
-      homeColumnStart: 70,
-      safeZones: [39, 8, 13, 21, 26, 34, 47, 50, 37]
-    }
-  ];
+            // Roll the dice (1-6)
+            this.count = Math.floor(Math.random() * 6 + 1);
+            const die = document.getElementById('die');
+            die.style.backgroundImage = `url("assets/${this.count}.png")`;
 
-  // --- Track and Home Columns ---
-  const track = [];
-  const centerX = boardSize / 2;
-  const centerY = boardSize / 2;
-  const radius = 250;
-  for (let i = 0; i < trackPositions; i++) {
-    const angle = (2 * Math.PI * i) / trackPositions - Math.PI / 2;
-    const x = centerX + radius * Math.cos(angle) - cellSize / 2;
-    const y = centerY + radius * Math.sin(angle) - cellSize / 2;
-    track.push({ x, y });
-  }
-
-  const homeColumns = {};
-  players.forEach(player => {
-    homeColumns[player.id] = [];
-    const startX = player.id === 'red' || player.id === 'green' ? centerX - cellSize * 3 : centerX + cellSize * 2;
-    const startY = player.id === 'red' || player.id === 'yellow' ? centerY - cellSize * 3 : centerY + cellSize * 2;
-    for (let i = 0; i < homeColumnLength; i++) {
-      const x = player.id === 'red' || player.id === 'green' ? startX + i * cellSize : startX - i * cellSize;
-      const y = player.id === 'red' || player.id === 'yellow' ? startY + i * cellSize : startY - i * cellSize;
-      homeColumns[player.id].push({ x, y });
-    }
-  });
-
-  // --- Game State ---
-  let gameState = {};
-  let diceValue = 0;
-  let diceRolling = false;
-  let extraTurn = false;
-
-  // --- Initialization ---
-  function initGame() {
-    gameState = {
-      currentPlayerIndex: 0,
-      tokens: {},
-      finished: {},
-      track,
-      status: 'active'
-    };
-    players.forEach(player => {
-      gameState.tokens[player.id] = Array(4).fill(null).map((_, i) => ({
-        pos: -1, // -1 = home, 0-51 = track, 52+ = home column
-        id: `${player.id}${i + 1}`
-      }));
-      gameState.finished[player.id] = 0;
-    });
-    turnInfoElem.textContent = `Current Turn: ${players[0].id.toUpperCase()}`;
-    diceResultElem.textContent = `Dice: -`;
-    drawBoard();
-  }
-
-  // --- Drawing Functions ---
-  function drawBoard() {
-    ctx.clearRect(0, 0, boardSize, boardSize);
-    ctx.fillStyle = '#f0f4f8';
-    ctx.fillRect(0, 0, boardSize, boardSize);
-
-    // Draw track
-    track.forEach((pos, index) => {
-      ctx.beginPath();
-      ctx.arc(pos.x + cellSize / 2, pos.y + cellSize / 2, cellSize / 2 - 2, 0, 2 * Math.PI);
-      ctx.fillStyle = players.some(p => p.safeZones.includes(index)) ? '#ddd' : '#fff';
-      ctx.fill();
-      ctx.strokeStyle = '#333';
-      ctx.stroke();
-    });
-
-    // Draw home columns
-    players.forEach(player => {
-      homeColumns[player.id].forEach((pos, index) => {
-        ctx.beginPath();
-        ctx.rect(pos.x, pos.y, cellSize, cellSize);
-        ctx.fillStyle = index === homeColumnLength - 1 ? '#ffd700' : player.color + '33';
-        ctx.fill();
-        ctx.strokeStyle = '#333';
-        ctx.stroke();
-      });
-    });
-
-    // Draw tokens
-    players.forEach(player => {
-      gameState.tokens[player.id].forEach(token => {
-        if (token.pos === -1) {
-          const homeX = player.home.x + Math.random() * (cellSize * 3);
-          const homeY = player.home.y + Math.random() * (cellSize * 3);
-          drawToken(homeX, homeY, cellSize * 0.8, player.color, token.id);
-        } else if (token.pos >= 0 && token.pos < trackPositions) {
-          const pos = track[token.pos];
-          drawToken(pos.x, pos.y, cellSize, player.color, token.id);
-        } else if (token.pos >= player.homeColumnStart && token.pos < player.homeColumnStart + homeColumnLength) {
-          const homePos = token.pos - player.homeColumnStart;
-          const pos = homeColumns[player.id][homePos];
-          drawToken(pos.x, pos.y, cellSize, player.color, token.id);
+            // Handle turn logic
+            if (this.type === 1) {
+                if (this.r.checker()) {
+                    die.disabled = true;
+                }
+                this.rctns.push(this.count);
+                this.bctns.length = 0;
+                this.yctns.length = 0;
+                this.gctns.length = 0;
+                if (this.count !== 6) this.type++;
+                console.log('Red');
+            } else if (this.type === 2) {
+                if (this.g.checker()) {
+                    die.disabled = true;
+                }
+                this.gctns.push(this.count);
+                this.rctns.length = 0;
+                this.bctns.length = 0;
+                this.yctns.length = 0;
+                if (this.count !== 6) this.type++;
+                console.log('Green');
+            } else if (this.type === 3) {
+                if (this.y.checker()) {
+                    die.disabled = true;
+                }
+                this.yctns.push(this.count);
+                this.rctns.length = 0;
+                this.bctns.length = 0;
+                this.gctns.length = 0;
+                if (this.count !== 6) this.type++;
+                console.log('Yellow');
+            } else if (this.type === 4) {
+                if (this.b.checker()) {
+                    die.disabled = true;
+                }
+                this.bctns.push(this.count);
+                this.rctns.length = 0;
+                this.yctns.length = 0;
+                this.gctns.length = 0;
+                if (this.count !== 6) this.type = 1;
+                console.log('Blue');
+            }
         }
-      });
-    });
-  }
-
-  function drawToken(x, y, size, color, label) {
-    ctx.beginPath();
-    ctx.arc(x + size / 2, y + size / 2, size / 2 - 2, 0, 2 * Math.PI);
-    ctx.fillStyle = color;
-    ctx.fill();
-    ctx.strokeStyle = '#333';
-    ctx.stroke();
-    ctx.fillStyle = '#fff';
-    ctx.font = `${size / 3}px Arial`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(label, x + size / 2, y + size / 2);
-  }
-
-  // --- Dice Functions ---
-  function drawDice(value) {
-    diceCtx.clearRect(0, 0, diceCanvas.width, diceCanvas.height);
-    diceCtx.fillStyle = '#fff';
-    diceCtx.fillRect(0, 0, diceCanvas.width, diceCanvas.height);
-    diceCtx.strokeStyle = '#333';
-    diceCtx.lineWidth = 2;
-    diceCtx.strokeRect(0, 0, diceCanvas.width, diceCanvas.height);
-    diceCtx.fillStyle = '#333';
-    const pip = (x, y) => {
-      diceCtx.beginPath();
-      diceCtx.arc(x, y, 5, 0, 2 * Math.PI);
-      diceCtx.fill();
-    };
-    switch (value) {
-      case 1: pip(50, 50); break;
-      case 2: pip(30, 30); pip(70, 70); break;
-      case 3: pip(30, 30); pip(50, 50); pip(70, 70); break;
-      case 4: pip(30, 30); pip(70, 30); pip(30, 70); pip(70, 70); break;
-      case 5: pip(30, 30); pip(70, 30); pip(50, 50); pip(30, 70); pip(70, 70); break;
-      case 6: pip(30, 30); pip(70, 30); pip(30, 50); pip(70, 50); pip(30, 70); pip(70, 70); break;
-    }
-  }
-
-  function animateDiceRoll() {
-    diceRolling = true;
-    const start = performance.now();
-    function roll() {
-      const now = performance.now();
-      if (now - start < 1000) {
-        diceValue = Math.floor(Math.random() * 6) + 1;
-        drawDice(diceValue);
-        requestAnimationFrame(roll);
-      } else {
-        diceRolling = false;
-        drawDice(diceValue);
-        diceResultElem.textContent = `Dice: ${diceValue}`;
-        extraTurn = diceValue === 6;
-        endTurnBtn.disabled = false;
-      }
-    }
-    roll();
-  }
-
-  rollDiceBtn.addEventListener('click', () => {
-    if (!diceRolling && gameState.status === 'active') {
-      rollDiceBtn.disabled = true;
-      endTurnBtn.disabled = true;
-      animateDiceRoll();
-    }
-  });
-
-  // --- Token Movement ---
-  function moveToken() {
-    const player = players[gameState.currentPlayerIndex];
-    const tokensArr = gameState.tokens[player.id];
-    let moved = false;
-
-    // Bring token out on 6
-    if (diceValue === 6) {
-      const homeToken = tokensArr.find(t => t.pos === -1);
-      if (homeToken) {
-        homeToken.pos = player.startPos;
-        captureOpponent(player, homeToken.pos);
-        moved = true;
-      }
     }
 
-    // Move token on track or in home column
-    if (!moved) {
-      const movableTokens = tokensArr.filter(t => t.pos >= 0 && t.pos !== -1);
-      if (movableTokens.length > 0) {
-        const token = movableTokens[0]; // Simplified: move first movable token
-        const currentPos = token.pos;
-        let newPos;
+    // Token classes for each color
+    class Red_g {
+        j = 0;      // Current position
+        move = 0;   // Total moves made
+        home = true;// Whether token is at home
+        constructor(G_NO) {
+            this.G_NO = G_NO; // DOM element for the token
+        }
+    }
 
-        if (currentPos < trackPositions) {
-          const stepsToHome = (player.homeEntry - currentPos + trackPositions) % trackPositions;
-          if (currentPos <= player.homeEntry && currentPos + diceValue > player.homeEntry) {
-            newPos = player.homeColumnStart + (currentPos + diceValue - player.homeEntry - 1);
-          } else {
-            newPos = (currentPos + diceValue) % trackPositions;
-          }
-        } else {
-          newPos = currentPos + diceValue;
+    class Green_g {
+        j = 0;
+        move = 0;
+        home = true;
+        constructor(G_NO) {
+            this.G_NO = G_NO;
+        }
+    }
+
+    class Yellow_g {
+        j = 0;
+        move = 0;
+        home = true;
+        constructor(G_NO) {
+            this.G_NO = G_NO;
+        }
+    }
+
+    class Blue_g {
+        j = 0;
+        move = 0;
+        home = true;
+        constructor(G_NO) {
+            this.G_NO = G_NO;
+        }
+    }
+
+    // Instantiate tokens
+    const R1 = new Red_g(document.getElementById('r1'));
+    const R2 = new Red_g(document.getElementById('r2'));
+    const R3 = new Red_g(document.getElementById('r3'));
+    const R4 = new Red_g(document.getElementById('r4'));
+    const G1 = new Green_g(document.getElementById('g1'));
+    const G2 = new Green_g(document.getElementById('g2'));
+    const G3 = new Green_g(document.getElementById('g3'));
+    const G4 = new Green_g(document.getElementById('g4'));
+    const Y1 = new Yellow_g(document.getElementById('y1'));
+    const Y2 = new Yellow_g(document.getElementById('y2'));
+    const Y3 = new Yellow_g(document.getElementById('y3'));
+    const Y4 = new Yellow_g(document.getElementById('y4'));
+    const B1 = new Blue_g(document.getElementById('b1'));
+    const B2 = new Blue_g(document.getElementById('b2'));
+    const B3 = new Blue_g(document.getElementById('b3'));
+    const B4 = new Blue_g(document.getElementById('b4'));
+
+    // Player classes
+    class Red {
+        cnt = 0; // Count of rolls processed
+        y = null;// Current token element
+        a = 0;   // Animation step counter
+        x = null;// Target position element
+
+        mover(RN, count) {
+            this.y = RN.G_NO;
+            console.log(`Check: ${RN.move + count}`);
+            if (RN.move + count < 57) {
+                if (RN.j !== 0 && !RN.home) {
+                    const totalCount = count + RN.j;
+                    for (let i = RN.j; i <= totalCount; i++) {
+                        this.a++;
+                        setTimeout(() => this.movefunc(i, RN.move), 1000 * this.a);
+                        RN.move++;
+                    }
+                    RN.move--;
+                    RN.j = totalCount;
+                    this.killcheck(totalCount);
+                    this.a = 0;
+                    return true;
+                } else if (count === 6) {
+                    this.x = document.getElementById('1');
+                    this.x.appendChild(this.y);
+                    RN.j = 1;
+                    RN.home = false;
+                    return true;
+                }
+            }
+            return false;
         }
 
-        if (newPos < player.homeColumnStart + homeColumnLength) {
-          token.pos = newPos;
-          if (newPos < trackPositions) {
-            captureOpponent(player, newPos);
-          }
-          moved = true;
+        movefunc(i, move) {
+            if (move >= 51) {
+                this.x = i === 57 ? document.getElementById('out') : document.getElementById(`rf${i}`);
+            } else {
+                this.x = document.getElementById(i);
+            }
+            this.x.appendChild(this.y);
         }
 
-        // Check if token finished
-        if (newPos === player.homeColumnStart + homeColumnLength - 1) {
-          gameState.finished[player.id]++;
-          token.pos = -2; // Finished
-          if (gameState.finished[player.id] === tokensArr.length) {
-            gameState.status = 'finished';
-            showWinModal(`${player.id.toUpperCase()} wins!`);
-          }
+        choose(i) {
+            let ck = false;
+            if (roll.rctns.length !== 0) {
+                if (i === 1) ck = this.mover(R1, roll.rctns[this.cnt]);
+                else if (i === 2) ck = this.mover(R2, roll.rctns[this.cnt]);
+                else if (i === 3) ck = this.mover(R3, roll.rctns[this.cnt]);
+                else if (i === 4) ck = this.mover(R4, roll.rctns[this.cnt]);
+                console.log(`Moved: ${ck}`);
+                if (ck) {
+                    if (this.cnt === roll.rctns.length - 1) {
+                        console.log('last');
+                        document.getElementById('die').disabled = false;
+                        roll.rctns.length = 0;
+                        this.cnt = 0;
+                    } else {
+                        console.log('not last');
+                        this.cnt++;
+                    }
+                }
+            }
         }
-      }
+
+        checker() {
+            if (R1.home && R2.home && R3.home && R4.home && roll.count !== 6 && roll.rctns[roll.rctns.length - 1] !== 6) {
+                return false;
+            }
+            return roll.count === 6 ? false : true;
+        }
+
+        killcheck(j) {
+            const safe = [22, 27, 14, 9, 40, 35, 48, 1];
+            if (!safe.includes(j)) {
+                const tokens = [
+                    [G1, 'g_g1'], [G2, 'g_g2'], [G3, 'g_g3'], [G4, 'g_g4'],
+                    [Y1, 'g_y1'], [Y2, 'g_y2'], [Y3, 'g_y3'], [Y4, 'g_y4'],
+                    [B1, 'g_b1'], [B2, 'g_b2'], [B3, 'g_b3'], [B4, 'g_b4']
+                ];
+                tokens.forEach(([token, homeId]) => {
+                    if (j === token.j) {
+                        token.j = 0;
+                        token.home = true;
+                        token.move = 0;
+                        document.getElementById(homeId).appendChild(token.G_NO);
+                        roll.type--;
+                    }
+                });
+            }
+        }
     }
 
-    return moved;
-  }
+    class Green {
+        cnt = 0;
+        y = null;
+        a = 0;
+        x = null;
 
-  function captureOpponent(player, position) {
-    if (player.safeZones.includes(position)) return;
-    players.forEach(other => {
-      if (other.id !== player.id) {
-        const opponentTokens = gameState.tokens[other.id];
-        opponentTokens.forEach(token => {
-          if (token.pos === position) {
-            token.pos = -1;
-          }
-        });
-      }
-    });
-  }
+        mover(RN, count) {
+            console.log(`Check: ${RN.move + count}`);
+            this.y = RN.G_NO;
+            if (RN.move + count < 57) {
+                if (RN.j !== 0 && !RN.home) {
+                    let totalCount = count + RN.j;
+                    for (let i = RN.j; i <= totalCount; i++) {
+                        if (i === 53) {
+                            totalCount = totalCount - i + 1;
+                            RN.j = 1;
+                            i = 1;
+                        }
+                        this.a++;
+                        setTimeout(() => this.movefunc(i, RN.move), 1000 * this.a);
+                        RN.move++;
+                    }
+                    RN.move--;
+                    RN.j = totalCount;
+                    this.killcheck(totalCount);
+                    this.a = 0;
+                    return true;
+                } else if (count === 6) {
+                    this.x = document.getElementById('14');
+                    this.x.appendChild(this.y);
+                    RN.j = 14;
+                    RN.home = false;
+                    return true;
+                }
+            }
+            return false;
+        }
 
-  function endTurn() {
-    const moved = moveToken();
-    drawBoard();
-    if (!extraTurn || !moved) {
-      gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % players.length;
+        movefunc(i, move) {
+            if (move >= 51) {
+                this.x = i === 18 ? document.getElementById('out') : document.getElementById(`gf${i}`);
+            } else {
+                this.x = document.getElementById(i);
+            }
+            this.x.appendChild(this.y);
+        }
+
+        choose(i) {
+            let ck = false;
+            if (roll.gctns.length !== 0) {
+                if (i === 1) ck = this.mover(G1, roll.gctns[this.cnt]);
+                else if (i === 2) ck = this.mover(G2, roll.gctns[this.cnt]);
+                else if (i === 3) ck = this.mover(G3, roll.gctns[this.cnt]);
+                else if (i === 4) ck = this.mover(G4, roll.gctns[this.cnt]);
+                console.log(ck);
+                if (ck) {
+                    if (this.cnt === roll.gctns.length - 1) {
+                        document.getElementById('die').disabled = false;
+                        roll.gctns.length = 0;
+                        this.cnt = 0;
+                    } else {
+                        this.cnt++;
+                    }
+                }
+            }
+        }
+
+        checker() {
+            if (G1.home && G2.home && G3.home && G4.home && roll.count !== 6 && roll.gctns[roll.gctns.length - 1] !== 6) {
+                return false;
+            }
+            return roll.count === 6 ? false : true;
+        }
+
+        killcheck(j) {
+            const safe = [22, 27, 14, 9, 40, 35, 48, 1];
+            if (!safe.includes(j)) {
+                const tokens = [
+                    [R1, 'g_r1'], [R2, 'g_r2'], [R3, 'g_r3'], [R4, 'g_r4'],
+                    [Y1, 'g_y1'], [Y2, 'g_y2'], [Y3, 'g_y3'], [Y4, 'g_y4'],
+                    [B1, 'g_b1'], [B2, 'g_b2'], [B3, 'g_b3'], [B4, 'g_b4']
+                ];
+                tokens.forEach(([token, homeId]) => {
+                    if (j === token.j) {
+                        token.j = 0;
+                        token.home = true;
+                        token.move = 0;
+                        document.getElementById(homeId).appendChild(token.G_NO);
+                        roll.type--;
+                    }
+                });
+            }
+        }
     }
-    extraTurn = false;
-    turnInfoElem.textContent = `Current Turn: ${players[gameState.currentPlayerIndex].id.toUpperCase()}`;
-    diceResultElem.textContent = `Dice: -`;
-    rollDiceBtn.disabled = false;
-    endTurnBtn.disabled = true;
-  }
 
-  endTurnBtn.addEventListener('click', () => {
-    if (!diceRolling) {
-      endTurn();
+    class Yellow {
+        cnt = 0;
+        y = null;
+        a = 0;
+        x = null;
+
+        mover(RN, count) {
+            console.log(`Check: ${RN.move + count}`);
+            this.y = RN.G_NO;
+            if (RN.move + count < 57) {
+                if (RN.j !== 0 && !RN.home) {
+                    let totalCount = count + RN.j;
+                    for (let i = RN.j; i <= totalCount; i++) {
+                        if (i === 53) {
+                            totalCount = totalCount - i + 1;
+                            RN.j = 1;
+                            i = 1;
+                        }
+                        this.a++;
+                        setTimeout(() => this.movefunc(i, RN.move), 1000 * this.a);
+                        RN.move++;
+                    }
+                    RN.move--;
+                    RN.j = totalCount;
+                    this.killcheck(totalCount);
+                    this.a = 0;
+                    return true;
+                } else if (count === 6) {
+                    this.x = document.getElementById('27');
+                    this.x.appendChild(this.y);
+                    RN.j = 27;
+                    RN.home = false;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        movefunc(i, move) {
+            if (move >= 51) {
+                this.x = i === 31 ? document.getElementById('out') : document.getElementById(`yf${i}`);
+            } else {
+                this.x = document.getElementById(i);
+            }
+            this.x.appendChild(this.y);
+        }
+
+        choose(i) {
+            let ck = false;
+            if (roll.yctns.length !== 0) {
+                if (i === 1) ck = this.mover(Y1, roll.yctns[this.cnt]);
+                else if (i === 2) ck = this.mover(Y2, roll.yctns[this.cnt]);
+                else if (i === 3) ck = this.mover(Y3, roll.yctns[this.cnt]);
+                else if (i === 4) ck = this.mover(Y4, roll.yctns[this.cnt]);
+                console.log(ck);
+                if (ck) {
+                    if (this.cnt === roll.yctns.length - 1) {
+                        document.getElementById('die').disabled = false;
+                        roll.yctns.length = 0;
+                        this.cnt = 0;
+                    } else {
+                        this.cnt++;
+                    }
+                }
+            }
+        }
+
+        checker() {
+            if (Y1.home && Y2.home && Y3.home && Y4.home && roll.count !== 6 && roll.yctns[roll.yctns.length - 1] !== 6) {
+                return false;
+            }
+            return roll.count === 6 ? false : true;
+        }
+
+        killcheck(j) {
+            const safe = [22, 27, 14, 9, 40, 35, 48, 1];
+            if (!safe.includes(j)) {
+                const tokens = [
+                    [R1, 'g_r1'], [R2, 'g_r2'], [R3, 'g_r3'], [R4, 'g_r4'],
+                    [G1, 'g_g1'], [G2, 'g_g2'], [G3, 'g_g3'], [G4, 'g_g4'],
+                    [B1, 'g_b1'], [B2, 'g_b2'], [B3, 'g_b3'], [B4, 'g_b4']
+                ];
+                tokens.forEach(([token, homeId]) => {
+                    if (j === token.j) {
+                        token.j = 0;
+                        token.home = true;
+                        token.move = 0;
+                        document.getElementById(homeId).appendChild(token.G_NO);
+                        roll.type--;
+                    }
+                });
+            }
+        }
     }
-  });
 
-  // --- Win Modal ---
-  function showWinModal(message) {
-    winMessageElem.textContent = message;
-    winModal.style.display = 'flex';
-  }
+    class Blue {
+        cnt = 0;
+        y = null;
+        a = 0;
+        x = null;
 
-  restartGameBtn.addEventListener('click', () => {
-    initGame();
-    winModal.style.display = 'none';
-  });
+        mover(RN, count) {
+            console.log(`Check: ${RN.move + count}`);
+            this.y = RN.G_NO;
+            if (RN.move + count < 57) {
+                if (RN.j !== 0 && !RN.home) {
+                    let totalCount = count + RN.j;
+                    for (let i = RN.j; i <= totalCount; i++) {
+                        if (i === 53) {
+                            totalCount = totalCount - i + 1;
+                            RN.j = 1;
+                            i = 1;
+                        }
+                        this.a++;
+                        setTimeout(() => this.movefunc(i, RN.move), 1000 * this.a);
+                        RN.move++;
+                    }
+                    RN.move--;
+                    RN.j = totalCount;
+                    this.killcheck(totalCount);
+                    this.a = 0;
+                    return true;
+                } else if (count === 6) {
+                    this.x = document.getElementById('40');
+                    this.x.appendChild(this.y);
+                    RN.j = 40;
+                    RN.home = false;
+                    return true;
+                }
+            }
+            return false;
+        }
 
-  // --- Start Game ---
-  initGame();
+        movefunc(i, move) {
+            if (move >= 51) {
+                this.x = i === 44 ? document.getElementById('out') : document.getElementById(`bf${i}`);
+            } else {
+                this.x = document.getElementById(i);
+            }
+            this.x.appendChild(this.y);
+        }
+
+        choose(i) {
+            let ck = false;
+            if (roll.bctns.length !== 0) {
+                if (i === 1) ck = this.mover(B1, roll.bctns[this.cnt]);
+                else if (i === 2) ck = this.mover(B2, roll.bctns[this.cnt]);
+                else if (i === 3) ck = this.mover(B3, roll.bctns[this.cnt]);
+                else if (i === 4) ck = this.mover(B4, roll.bctns[this.cnt]);
+                console.log(ck);
+                if (ck) {
+                    if (this.cnt === roll.bctns.length - 1) {
+                        document.getElementById('die').disabled = false;
+                        roll.bctns.length = 0;
+                        this.cnt = 0;
+                    } else {
+                        this.cnt++;
+                    }
+                }
+            }
+        }
+
+        checker() {
+            if (B1.home && B2.home && B3.home && B4.home && roll.count !== 6 && roll.bctns[roll.bctns.length - 1] !== 6) {
+                return false;
+            }
+            return roll.count === 6 ? false : true;
+        }
+
+        killcheck(j) {
+            const safe = [22, 27, 14, 9, 40, 35, 48, 1];
+            if (!safe.includes(j)) {
+                const tokens = [
+                    [R1, 'g_r1'], [R2, 'g_r2'], [R3, 'g_r3'], [R4, 'g_r4'],
+                    [G1, 'g_g1'], [G2, 'g_g2'], [G3, 'g_g3'], [G4, 'g_g4'],
+                    [Y1, 'g_y1'], [Y2, 'g_y2'], [Y3, 'g_y3'], [Y4, 'g_y4']
+                ];
+                tokens.forEach(([token, homeId]) => {
+                    if (j === token.j) {
+                        token.j = 0;
+                        token.home = true;
+                        token.move = 0;
+                        document.getElementById(homeId).appendChild(token.G_NO);
+                        roll.type = 4;
+                    }
+                });
+            }
+        }
+    }
+
+    // Instantiate game objects
+    const roll = new Dice();
+    const red = new Red();
+    const green = new Green();
+    const yellow = new Yellow();
+    const blue = new Blue();
+
+    // Initialize message display
+    const msg = document.getElementById('message');
+    msg.style.fontSize = '35px';
+    msg.style.textAlign = 'center';
+    msg.innerHTML = 'Red';
+    msg.style.color = 'Red';
+
+    // Attach event listeners
+    document.getElementById('die').addEventListener('click', () => roll.roll());
+    document.getElementById('r1').addEventListener('click', () => red.choose(1));
+    document.getElementById('r2').addEventListener('click', () => red.choose(2));
+    document.getElementById('r3').addEventListener('click', () => red.choose(3));
+    document.getElementById('r4').addEventListener('click', () => red.choose(4));
+    document.getElementById('g1').addEventListener('click', () => green.choose(1));
+    document.getElementById('g2').addEventListener('click', () => green.choose(2));
+    document.getElementById('g3').addEventListener('click', () => green.choose(3));
+    document.getElementById('g4').addEventListener('click', () => green.choose(4));
+    document.getElementById('y1').addEventListener('click', () => yellow.choose(1));
+    document.getElementById('y2').addEventListener('click', () => yellow.choose(2));
+    document.getElementById('y3').addEventListener('click', () => yellow.choose(3));
+    document.getElementById('y4').addEventListener('click', () => yellow.choose(4));
+    document.getElementById('b1').addEventListener('click', () => blue.choose(1));
+    document.getElementById('b2').addEventListener('click', () => blue.choose(2));
+    document.getElementById('b3').addEventListener('click', () => blue.choose(3));
+    document.getElementById('b4').addEventListener('click', () => blue.choose(4));
 });

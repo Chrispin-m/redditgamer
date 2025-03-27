@@ -11,7 +11,7 @@ Devvit.configure({
 
 // Add a custom post type for Multiplayer Games.
 Devvit.addCustomPostType({
-  name: 'SocialDrid Games',
+  name: 'SocialGrid Games',
   height: 'tall',
   render: (context) => {
     // Load the actual Reddit username once.
@@ -114,7 +114,7 @@ Devvit.addCustomPostType({
               textShadow="1px 1px 2px #000000"
               fontFamily="Roboto"
             >
-              Multiplayer Games
+              Multiplayer Social Grid Games
             </text>
             <spacer />
             <vstack
@@ -157,7 +157,7 @@ Devvit.addCustomPostType({
                     onPress={() => setSelectedGame('dots')}
                     hover={{ backgroundColor: '#ADD8E6' }}
                   >
-                    Ludo(beta)
+                    Ludo King(beta)
                   </button>
                 </hstack>
                 <hstack gap="medium" width="100%">
