@@ -45,8 +45,9 @@ export type GameState = {
   };
   connect4: (string | null)[][];
   chess?: {
-    fen: string;
+    board: (string | null)[][];
     history: string[];
+    turn: 'white' | 'black';
   };
   reaction?: {
     // Array of score entries (one per player) for Reaction game

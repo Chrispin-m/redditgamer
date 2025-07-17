@@ -10,8 +10,26 @@
   let gameActive = false;
   let refreshInterval = null;
   let timerInterval = null;
-  let chess = null;
-  let chessboard = null;
+  let selectedSquare = null;
+  let chessBoard = null;
+
+  // Chess piece Unicode symbols
+  const chessPieces = {
+    'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙', // White pieces
+    'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟'  // Black pieces
+  };
+
+  // Initial chess board position (FEN: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR)
+  const initialBoard = [
+    ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+    ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+    ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+  ];
 
   // Function to send messages to the parent Devvit app
   function sendMessage(message) {
@@ -94,128 +112,227 @@
     return playerIndex === 0 ? 'white' : 'black';
   }
 
-  // Wait for libraries to load
-  function waitForLibraries() {
-    return new Promise((resolve) => {
-      const checkLibraries = () => {
-        if (typeof Chess !== 'undefined' && typeof React !== 'undefined' && typeof ReactDOM !== 'undefined' && window.ReactChessboard) {
-          resolve();
-        } else {
-          setTimeout(checkLibraries, 100);
-        }
-      };
-      checkLibraries();
-    });
+  // Convert board position to chess notation
+  function positionToNotation(row, col) {
+    const files = 'abcdefgh';
+    const ranks = '87654321';
+    return files[col] + ranks[row];
   }
 
-  // Initialize chess game
-  async function initializeChess() {
-    try {
-      await waitForLibraries();
-      
-      chess = new Chess();
-      
-      // Create chessboard using React
-      const ChessboardComponent = React.createElement(window.ReactChessboard.Chessboard, {
-        position: chess.fen(),
-        onPieceDrop: handlePieceDrop,
-        boardOrientation: getPlayerColor(currentUsername),
-        arePiecesDraggable: gameState && gameState.status === 'active' && gameState.turn === currentUsername,
-        customBoardStyle: {
-          borderRadius: '4px',
-          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
-        },
-        customDarkSquareStyle: { backgroundColor: '#779952' },
-        customLightSquareStyle: { backgroundColor: '#edeed1' },
-      });
+  // Convert chess notation to board position
+  function notationToPosition(notation) {
+    const files = 'abcdefgh';
+    const ranks = '87654321';
+    const col = files.indexOf(notation[0]);
+    const row = ranks.indexOf(notation[1]);
+    return [row, col];
+  }
 
-      ReactDOM.render(ChessboardComponent, boardElem);
-    } catch (error) {
-      console.error('Error initializing chess:', error);
-      statusElem.textContent = '❌ Error loading chess game';
+  // Check if piece belongs to current player
+  function isPieceOwnedByPlayer(piece, playerColor) {
+    if (!piece) return false;
+    if (playerColor === 'white') {
+      return piece === piece.toUpperCase(); // White pieces are uppercase
+    } else {
+      return piece === piece.toLowerCase(); // Black pieces are lowercase
     }
   }
 
-  // Handle piece drop
-  function handlePieceDrop(sourceSquare, targetSquare) {
-    if (!gameState || !gameActive || gameState.status !== 'active') return false;
-    if (gameState.turn !== currentUsername) return false;
-    if (!chess) return false;
-
-    try {
-      const move = chess.move({
-        from: sourceSquare,
-        to: targetSquare,
-        promotion: 'q' // Always promote to queen for simplicity
-      });
-
-      if (move === null) return false; // Invalid move
-
-      // Send move to server
-      sendMessage({
-        type: 'makeMove',
-        data: {
-          username: currentUsername,
-          position: { fen: chess.fen(), move: move.san },
-          gameType: 'chess'
-        }
-      });
-
-      return true;
-    } catch (error) {
-      console.error('Invalid move:', error);
+  // Basic move validation (simplified)
+  function isValidMove(fromRow, fromCol, toRow, toCol, piece) {
+    // Basic bounds checking
+    if (toRow < 0 || toRow > 7 || toCol < 0 || toCol > 7) return false;
+    
+    // Can't capture own piece
+    const targetPiece = chessBoard[toRow][toCol];
+    if (targetPiece && isPieceOwnedByPlayer(piece, getPlayerColor(currentUsername)) === isPieceOwnedByPlayer(targetPiece, getPlayerColor(currentUsername))) {
       return false;
     }
+
+    const rowDiff = Math.abs(toRow - fromRow);
+    const colDiff = Math.abs(toCol - fromCol);
+    const piece_lower = piece.toLowerCase();
+
+    // Basic piece movement rules (simplified)
+    switch (piece_lower) {
+      case 'p': // Pawn
+        const direction = piece === piece.toUpperCase() ? -1 : 1; // White moves up (-1), Black moves down (+1)
+        const startRow = piece === piece.toUpperCase() ? 6 : 1;
+        
+        // Forward move
+        if (fromCol === toCol && !targetPiece) {
+          if (toRow === fromRow + direction) return true;
+          if (fromRow === startRow && toRow === fromRow + 2 * direction) return true;
+        }
+        // Diagonal capture
+        if (colDiff === 1 && toRow === fromRow + direction && targetPiece) return true;
+        return false;
+
+      case 'r': // Rook
+        return (rowDiff === 0 || colDiff === 0) && isPathClear(fromRow, fromCol, toRow, toCol);
+
+      case 'n': // Knight
+        return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
+
+      case 'b': // Bishop
+        return rowDiff === colDiff && isPathClear(fromRow, fromCol, toRow, toCol);
+
+      case 'q': // Queen
+        return ((rowDiff === 0 || colDiff === 0) || (rowDiff === colDiff)) && isPathClear(fromRow, fromCol, toRow, toCol);
+
+      case 'k': // King
+        return rowDiff <= 1 && colDiff <= 1;
+
+      default:
+        return false;
+    }
   }
 
-  // Update chessboard
-  async function updateChessboard() {
-    if (!chess || !gameState) return;
-
-    try {
-      await waitForLibraries();
-
-      if (gameState.chess && gameState.chess.fen) {
-        chess.load(gameState.chess.fen);
-      }
-
-      const ChessboardComponent = React.createElement(window.ReactChessboard.Chessboard, {
-        position: chess.fen(),
-        onPieceDrop: handlePieceDrop,
-        boardOrientation: getPlayerColor(currentUsername),
-        arePiecesDraggable: gameState && gameState.status === 'active' && gameState.turn === currentUsername,
-        customBoardStyle: {
-          borderRadius: '4px',
-          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
-        },
-        customDarkSquareStyle: { backgroundColor: '#779952' },
-        customLightSquareStyle: { backgroundColor: '#edeed1' },
-      });
-
-      ReactDOM.render(ChessboardComponent, boardElem);
-
-      // Check for game end
-      if (chess.isGameOver()) {
-        let winner = null;
-        let isDraw = false;
-
-        if (chess.isCheckmate()) {
-          // Current player is in checkmate, so the other player wins
-          const currentPlayerColor = chess.turn();
-          const winnerColor = currentPlayerColor === 'w' ? 'b' : 'w';
-          const winnerIndex = winnerColor === 'w' ? 0 : 1;
-          winner = gameState.players[winnerIndex];
-        } else {
-          isDraw = true;
-        }
-
-        setTimeout(() => {
-          showGameEndModal(winner, isDraw);
-        }, 500);
-      }
-    } catch (error) {
-      console.error('Error updating chessboard:', error);
+  // Check if path is clear for sliding pieces
+  function isPathClear(fromRow, fromCol, toRow, toCol) {
+    const rowStep = toRow > fromRow ? 1 : toRow < fromRow ? -1 : 0;
+    const colStep = toCol > fromCol ? 1 : toCol < fromCol ? -1 : 0;
+    
+    let currentRow = fromRow + rowStep;
+    let currentCol = fromCol + colStep;
+    
+    while (currentRow !== toRow || currentCol !== toCol) {
+      if (chessBoard[currentRow][currentCol] !== null) return false;
+      currentRow += rowStep;
+      currentCol += colStep;
     }
+    
+    return true;
+  }
+
+  // Initialize chess board
+  function initializeChessBoard() {
+    chessBoard = gameState && gameState.chess && gameState.chess.board 
+      ? gameState.chess.board 
+      : JSON.parse(JSON.stringify(initialBoard));
+    renderBoard();
+  }
+
+  // Render the chess board
+  function renderBoard() {
+    if (!boardElem) return;
+    
+    boardElem.innerHTML = '';
+    
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const square = document.createElement('div');
+        square.className = 'chess-square';
+        square.classList.add((row + col) % 2 === 0 ? 'light' : 'dark');
+        square.dataset.row = row;
+        square.dataset.col = col;
+        
+        // Add piece if present
+        const piece = chessBoard[row][col];
+        if (piece) {
+          const pieceSpan = document.createElement('span');
+          pieceSpan.className = 'chess-piece';
+          pieceSpan.classList.add(piece === piece.toUpperCase() ? 'white-piece' : 'black-piece');
+          pieceSpan.textContent = chessPieces[piece] || piece;
+          square.appendChild(pieceSpan);
+        }
+        
+        // Add notation for edge squares
+        if (row === 7) {
+          const fileNotation = document.createElement('div');
+          fileNotation.className = 'chess-notation file-notation';
+          fileNotation.textContent = 'abcdefgh'[col];
+          square.appendChild(fileNotation);
+        }
+        if (col === 0) {
+          const rankNotation = document.createElement('div');
+          rankNotation.className = 'chess-notation rank-notation';
+          rankNotation.textContent = 8 - row;
+          square.appendChild(rankNotation);
+        }
+        
+        square.addEventListener('click', () => handleSquareClick(row, col));
+        boardElem.appendChild(square);
+      }
+    }
+  }
+
+  // Handle square click
+  function handleSquareClick(row, col) {
+    if (!gameState || !gameActive || gameState.status !== 'active') return;
+    if (gameState.turn !== currentUsername) return;
+
+    const clickedPiece = chessBoard[row][col];
+    const playerColor = getPlayerColor(currentUsername);
+
+    // Clear previous selections
+    document.querySelectorAll('.chess-square').forEach(sq => {
+      sq.classList.remove('selected', 'possible-move');
+    });
+
+    if (selectedSquare) {
+      const [fromRow, fromCol] = selectedSquare;
+      const piece = chessBoard[fromRow][fromCol];
+      
+      // If clicking the same square, deselect
+      if (fromRow === row && fromCol === col) {
+        selectedSquare = null;
+        return;
+      }
+      
+      // Try to make a move
+      if (piece && isValidMove(fromRow, fromCol, row, col, piece)) {
+        makeMove(fromRow, fromCol, row, col);
+        selectedSquare = null;
+        return;
+      }
+    }
+
+    // Select a piece if it belongs to current player
+    if (clickedPiece && isPieceOwnedByPlayer(clickedPiece, playerColor)) {
+      selectedSquare = [row, col];
+      const square = boardElem.children[row * 8 + col];
+      square.classList.add('selected');
+      
+      // Highlight possible moves (basic implementation)
+      highlightPossibleMoves(row, col, clickedPiece);
+    } else {
+      selectedSquare = null;
+    }
+  }
+
+  // Highlight possible moves (simplified)
+  function highlightPossibleMoves(fromRow, fromCol, piece) {
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        if (isValidMove(fromRow, fromCol, row, col, piece)) {
+          const square = boardElem.children[row * 8 + col];
+          square.classList.add('possible-move');
+        }
+      }
+    }
+  }
+
+  // Make a move
+  function makeMove(fromRow, fromCol, toRow, toCol) {
+    const piece = chessBoard[fromRow][fromCol];
+    const from = positionToNotation(fromRow, fromCol);
+    const to = positionToNotation(toRow, toCol);
+    
+    // Update local board for immediate feedback
+    chessBoard[toRow][toCol] = piece;
+    chessBoard[fromRow][fromCol] = null;
+    renderBoard();
+
+    // Send move to server
+    sendMessage({
+      type: 'makeMove',
+      data: {
+        username: currentUsername,
+        position: { from, to, board: chessBoard },
+        gameType: 'chess'
+      }
+    });
   }
 
   // Update game status display
@@ -325,12 +442,7 @@
         gameState = message.data;
         gameActive = gameState.status === 'active';
         
-        if (!chess) {
-          initializeChess();
-        } else {
-          updateChessboard();
-        }
-        
+        initializeChessBoard();
         updateStatus();
         updatePlayersInfo();
         
@@ -354,7 +466,7 @@
         console.log(`Player joined: ${message.data.username}`);
         if (message.data.gameState) {
           gameState = message.data.gameState;
-          updateChessboard();
+          initializeChessBoard();
           updateStatus();
           updatePlayersInfo();
         }
@@ -365,7 +477,7 @@
         gameActive = true;
         if (message.data.gameState) {
           gameState = message.data.gameState;
-          updateChessboard();
+          initializeChessBoard();
           updateStatus();
           updatePlayersInfo();
           startAutoRefresh();
@@ -379,7 +491,7 @@
         if (message.data.gameState || message.data) {
           gameState = message.data.gameState || message.data;
           gameActive = gameState.status === 'active';
-          updateChessboard();
+          initializeChessBoard();
           updateStatus();
           updatePlayersInfo();
         }
@@ -388,7 +500,6 @@
       case 'turnChanged':
         console.log(`Turn changed to: ${message.data.currentTurn}`);
         updateStatus();
-        updateChessboard();
         break;
 
       case 'timerUpdate':
@@ -403,7 +514,7 @@
         
         if (message.data.finalState) {
           gameState = message.data.finalState;
-          updateChessboard();
+          initializeChessBoard();
           updateStatus();
           updatePlayersInfo();
         }

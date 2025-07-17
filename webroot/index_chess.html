@@ -5,13 +5,90 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Multiplayer Chess</title>
   <link rel="stylesheet" href="styles.css">
-  <!-- Load React and ReactDOM -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <!-- Load Chess.js library -->
-  <script src="https://unpkg.com/chess.js@1.0.0-beta.8/dist/chess.min.js"></script>
-  <!-- Load React Chessboard -->
-  <script src="https://unpkg.com/react-chessboard@4.4.0/dist/index.js"></script>
+  <style>
+    /* Chess-specific styles */
+    #chessBoard {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(8, 1fr);
+      width: min(95vw, 400px);
+      height: min(95vw, 400px);
+      margin: 15px auto;
+      border: 3px solid #8b4513;
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .chess-square {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(1.5em, 4vw, 2.5em);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+      position: relative;
+    }
+
+    .chess-square.light {
+      background-color: #f0d9b5;
+    }
+
+    .chess-square.dark {
+      background-color: #b58863;
+    }
+
+    .chess-square.selected {
+      background-color: #ffff00 !important;
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .chess-square.possible-move {
+      background-color: #90EE90 !important;
+    }
+
+    .chess-square.last-move {
+      background-color: #ffeb3b !important;
+    }
+
+    .chess-square:hover {
+      opacity: 0.8;
+      transform: scale(1.05);
+    }
+
+    .chess-piece {
+      font-size: inherit;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    .white-piece {
+      color: #ffffff;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    }
+
+    .black-piece {
+      color: #000000;
+      text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.3);
+    }
+
+    /* Chess notation */
+    .chess-notation {
+      position: absolute;
+      font-size: 0.6em;
+      font-weight: bold;
+      color: #666;
+    }
+
+    .file-notation {
+      bottom: 2px;
+      right: 2px;
+    }
+
+    .rank-notation {
+      top: 2px;
+      left: 2px;
+    }
+  </style>
 </head>
 <body>
   <h1>🎮 Multiplayer Chess</h1>
@@ -22,7 +99,7 @@
   <div class="instruction-box">
     <p>
       <strong>📋 How to Play:</strong> Classic chess rules apply. 
-      White moves first. Capture the opponent's king to win!
+      White moves first. Click a piece to select, then click destination to move.
       <br><strong>⏱️ You have 30 seconds per turn after first move. 🔄 Auto-refresh every 3s.</strong>
     </p>
   </div>

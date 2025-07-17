@@ -21,6 +21,18 @@ export class GameAPI {
     gameType: GameType,
     maxPlayers: number
   ): Promise<void> {
+    // Deep copy of initial board for chess
+    const initialChessBoard = [
+      ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+      ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+      [null, null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null],
+      ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+      ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+    ];
+
     const initialState: GameState = {
       currentGame: gameType,
       players: [],
@@ -31,7 +43,11 @@ export class GameAPI {
       gomoku: Array(225).fill(null),
       dots: { lines: [], boxes: {}, gridSize: 5 },
       connect4: Array.from({ length: 7 }, () => Array(6).fill(null)),
-      chess: gameType === 'chess' ? { fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', history: [] } : undefined,
+      chess: gameType === 'chess' ? { 
+        board: JSON.parse(JSON.stringify(initialChessBoard)), 
+        history: [],
+        turn: 'white'
+      } : undefined,
       // For Reaction Speed, you may store additional data if desired.
       reaction: gameType === 'reaction' ? { scores: [] } : undefined,
       status: 'waiting',
@@ -43,6 +59,17 @@ export class GameAPI {
   }
 
   private static createInitialState(): GameState {
+    const initialChessBoard = [
+      ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+      ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+      [null, null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null],
+      ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+      ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+    ];
+
     return {
       currentGame: 'tictactoe',
       players: [],
@@ -52,7 +79,11 @@ export class GameAPI {
       gomoku: Array(225).fill(null),
       dots: { lines: [], boxes: {}, gridSize: 5 },
       connect4: Array.from({ length: 7 }, () => Array(6).fill(null)),
-      chess: { fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', history: [] },
+      chess: { 
+        board: JSON.parse(JSON.stringify(initialChessBoard)), 
+        history: [],
+        turn: 'white'
+      },
       reaction: undefined,
       status: 'waiting',
       winner: undefined,
@@ -300,19 +331,33 @@ export class GameAPI {
   }
 
   private static processChessMove(state: GameState, action: GameAction): GameState {
-    // Chess move is handled by chess.js library in the frontend
-    // The position contains the new FEN string and move
-    const moveData = action.data.position as { fen: string; move: string };
+    // Chess move contains from, to, and updated board
+    const moveData = action.data.position as { from: string; to: string; board: any[][] };
     
     if (!state.chess) {
-      state.chess = { fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', history: [] };
+      const initialChessBoard = [
+        ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+        ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+        [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null],
+        ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+        ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+      ];
+      state.chess = { 
+        board: JSON.parse(JSON.stringify(initialChessBoard)), 
+        history: [],
+        turn: 'white'
+      };
     }
     
     // Update the chess state
-    state.chess.fen = moveData.fen;
-    state.chess.history.push(moveData.move);
+    state.chess.board = moveData.board;
+    state.chess.history.push(`${moveData.from}-${moveData.to}`);
+    state.chess.turn = state.chess.turn === 'white' ? 'black' : 'white';
     
-    // Check for game end conditions (handled by chess.js in frontend)
+    // Basic checkmate detection could be added here
     // For now, just switch turns
     state.turn = this.getNextPlayer(state, action.data.playerId);
     
