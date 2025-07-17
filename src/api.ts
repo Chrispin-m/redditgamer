@@ -33,9 +33,9 @@ export class GameAPI {
       connect4: Array.from({ length: 7 }, () => Array(6).fill(null)),
       chess: gameType === 'chess' ? { fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', history: [] } : undefined,
       // For Reaction Speed, you may store additional data if desired.
-      reactionSpeed: gameType === 'reaction' ? { scores: [] } : undefined,
+      reaction: gameType === 'reaction' ? { scores: [] } : undefined,
       status: 'waiting',
-      winner: null,
+      winner: undefined,
       firstMoveMade: false,
     };
 
@@ -53,9 +53,9 @@ export class GameAPI {
       dots: { lines: [], boxes: {}, gridSize: 5 },
       connect4: Array.from({ length: 7 }, () => Array(6).fill(null)),
       chess: { fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', history: [] },
-      reactionSpeed: undefined,
+      reaction: undefined,
       status: 'waiting',
-      winner: null,
+      winner: undefined,
       firstMoveMade: false,
     };
   }
@@ -74,7 +74,7 @@ export class GameAPI {
     // Create a deep copy of the state to avoid mutations
     const newState = JSON.parse(JSON.stringify(state));
 
-    // For reactionSpeed, moves are handled by the web view directly.
+    // For reaction, moves are handled by the web view directly.
     if (state.currentGame === 'reaction') {
       // No board move processing needed for Reaction Speed.
       return newState;
@@ -146,14 +146,23 @@ export class GameAPI {
     const column = action.data.position as number;
     if (column < 0 || column >= 7) throw new Error('Invalid column');
     
+    // Find the lowest empty row in the column (bottom-up)
     const colArray = state.connect4[column];
-    const row = colArray.lastIndexOf(null);
+    let row = -1;
+    for (let r = 5; r >= 0; r--) { // Start from bottom (row 5) and go up
+      if (colArray[r] === null) {
+        row = r;
+        break;
+      }
+    }
+    
     if (row === -1) throw new Error('Column full');
     
+    // Place the disc at the lowest available position
     state.connect4[column][row] = action.data.playerId;
     
-    // Check for win
-    const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+    // Check for win (4 in a row)
+    const directions = [[0, 1], [1, 0], [1, 1], [1, -1]]; // horizontal, vertical, diagonal
     for (const [dx, dy] of directions) {
       let count = 1;
       
@@ -182,7 +191,7 @@ export class GameAPI {
       }
     }
     
-    // Check for draw
+    // Check for draw (board full)
     if (state.connect4.every(col => col.every(cell => cell !== null))) {
       state.status = 'draw';
       return state;

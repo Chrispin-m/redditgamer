@@ -96,6 +96,7 @@
     if (!gameState) return;
     
     boardElem.innerHTML = '';
+    
     // Create each column element
     for (let c = 0; c < 7; c++) {
       const colDiv = document.createElement('div');
@@ -105,13 +106,18 @@
       colDiv.addEventListener('click', () => handleColumnClick(c));
 
       // Create cells in column (from top to bottom for display)
-      for (let r = 5; r >= 0; r--) {
+      for (let r = 0; r < 6; r++) {
         const cell = document.createElement('div');
         cell.classList.add('connect4-cell');
+        cell.dataset.row = r;
+        cell.dataset.col = c;
+        
+        // Check if there's a disc at this position
         if (gameState.connect4[c][r]) {
           const playerColor = getPlayerColor(gameState.connect4[c][r]);
           cell.classList.add(playerColor);
         }
+        
         colDiv.appendChild(cell);
       }
       boardElem.appendChild(colDiv);
@@ -204,8 +210,11 @@
     if (!gameState || !gameActive || gameState.status !== 'active') return;
     if (gameState.turn !== currentUsername) return;
     
-    // Check if column is full
-    if (gameState.connect4[col][5]) return; // Top cell is occupied
+    // Check if column is full (check top row)
+    if (gameState.connect4[col][0]) return; // Top cell is occupied
+    
+    // Show drop animation before sending move
+    animateDiscDrop(col);
 
     // Send move to server
     sendMessage({
@@ -216,6 +225,37 @@
         gameType: 'connect4'
       }
     });
+  }
+
+  // Animate disc dropping
+  function animateDiscDrop(col) {
+    const column = boardElem.children[col];
+    if (!column) return;
+
+    // Find the lowest empty cell in this column
+    let targetRow = -1;
+    for (let r = 5; r >= 0; r--) {
+      if (!gameState.connect4[col][r]) {
+        targetRow = r;
+        break;
+      }
+    }
+
+    if (targetRow === -1) return; // Column is full
+
+    // Create a temporary disc for animation
+    const animDisc = document.createElement('div');
+    animDisc.className = 'connect4-cell dropping';
+    animDisc.classList.add(getPlayerColor(currentUsername));
+    
+    // Position it at the top of the column
+    const targetCell = column.children[targetRow];
+    targetCell.appendChild(animDisc);
+    
+    // Remove animation class after animation completes
+    setTimeout(() => {
+      animDisc.classList.remove('dropping');
+    }, 500);
   }
 
   // Handle messages from parent

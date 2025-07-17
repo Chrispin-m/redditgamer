@@ -94,31 +94,53 @@
     return playerIndex === 0 ? 'white' : 'black';
   }
 
-  // Initialize chess game
-  function initializeChess() {
-    chess = new Chess();
-    
-    // Create chessboard using React
-    const ChessboardComponent = React.createElement(window.ReactChessboard.Chessboard, {
-      position: chess.fen(),
-      onPieceDrop: handlePieceDrop,
-      boardOrientation: getPlayerColor(currentUsername),
-      arePiecesDraggable: gameState && gameState.status === 'active' && gameState.turn === currentUsername,
-      customBoardStyle: {
-        borderRadius: '4px',
-        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
-      },
-      customDarkSquareStyle: { backgroundColor: '#779952' },
-      customLightSquareStyle: { backgroundColor: '#edeed1' },
+  // Wait for libraries to load
+  function waitForLibraries() {
+    return new Promise((resolve) => {
+      const checkLibraries = () => {
+        if (typeof Chess !== 'undefined' && typeof React !== 'undefined' && typeof ReactDOM !== 'undefined' && window.ReactChessboard) {
+          resolve();
+        } else {
+          setTimeout(checkLibraries, 100);
+        }
+      };
+      checkLibraries();
     });
+  }
 
-    ReactDOM.render(ChessboardComponent, boardElem);
+  // Initialize chess game
+  async function initializeChess() {
+    try {
+      await waitForLibraries();
+      
+      chess = new Chess();
+      
+      // Create chessboard using React
+      const ChessboardComponent = React.createElement(window.ReactChessboard.Chessboard, {
+        position: chess.fen(),
+        onPieceDrop: handlePieceDrop,
+        boardOrientation: getPlayerColor(currentUsername),
+        arePiecesDraggable: gameState && gameState.status === 'active' && gameState.turn === currentUsername,
+        customBoardStyle: {
+          borderRadius: '4px',
+          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
+        },
+        customDarkSquareStyle: { backgroundColor: '#779952' },
+        customLightSquareStyle: { backgroundColor: '#edeed1' },
+      });
+
+      ReactDOM.render(ChessboardComponent, boardElem);
+    } catch (error) {
+      console.error('Error initializing chess:', error);
+      statusElem.textContent = '❌ Error loading chess game';
+    }
   }
 
   // Handle piece drop
   function handlePieceDrop(sourceSquare, targetSquare) {
     if (!gameState || !gameActive || gameState.status !== 'active') return false;
     if (gameState.turn !== currentUsername) return false;
+    if (!chess) return false;
 
     try {
       const move = chess.move({
@@ -147,46 +169,52 @@
   }
 
   // Update chessboard
-  function updateChessboard() {
+  async function updateChessboard() {
     if (!chess || !gameState) return;
 
-    if (gameState.chess && gameState.chess.fen) {
-      chess.load(gameState.chess.fen);
-    }
+    try {
+      await waitForLibraries();
 
-    const ChessboardComponent = React.createElement(window.ReactChessboard.Chessboard, {
-      position: chess.fen(),
-      onPieceDrop: handlePieceDrop,
-      boardOrientation: getPlayerColor(currentUsername),
-      arePiecesDraggable: gameState && gameState.status === 'active' && gameState.turn === currentUsername,
-      customBoardStyle: {
-        borderRadius: '4px',
-        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
-      },
-      customDarkSquareStyle: { backgroundColor: '#779952' },
-      customLightSquareStyle: { backgroundColor: '#edeed1' },
-    });
-
-    ReactDOM.render(ChessboardComponent, boardElem);
-
-    // Check for game end
-    if (chess.isGameOver()) {
-      let winner = null;
-      let isDraw = false;
-
-      if (chess.isCheckmate()) {
-        // Current player is in checkmate, so the other player wins
-        const currentPlayerColor = chess.turn();
-        const winnerColor = currentPlayerColor === 'w' ? 'b' : 'w';
-        const winnerIndex = winnerColor === 'w' ? 0 : 1;
-        winner = gameState.players[winnerIndex];
-      } else {
-        isDraw = true;
+      if (gameState.chess && gameState.chess.fen) {
+        chess.load(gameState.chess.fen);
       }
 
-      setTimeout(() => {
-        showGameEndModal(winner, isDraw);
-      }, 500);
+      const ChessboardComponent = React.createElement(window.ReactChessboard.Chessboard, {
+        position: chess.fen(),
+        onPieceDrop: handlePieceDrop,
+        boardOrientation: getPlayerColor(currentUsername),
+        arePiecesDraggable: gameState && gameState.status === 'active' && gameState.turn === currentUsername,
+        customBoardStyle: {
+          borderRadius: '4px',
+          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
+        },
+        customDarkSquareStyle: { backgroundColor: '#779952' },
+        customLightSquareStyle: { backgroundColor: '#edeed1' },
+      });
+
+      ReactDOM.render(ChessboardComponent, boardElem);
+
+      // Check for game end
+      if (chess.isGameOver()) {
+        let winner = null;
+        let isDraw = false;
+
+        if (chess.isCheckmate()) {
+          // Current player is in checkmate, so the other player wins
+          const currentPlayerColor = chess.turn();
+          const winnerColor = currentPlayerColor === 'w' ? 'b' : 'w';
+          const winnerIndex = winnerColor === 'w' ? 0 : 1;
+          winner = gameState.players[winnerIndex];
+        } else {
+          isDraw = true;
+        }
+
+        setTimeout(() => {
+          showGameEndModal(winner, isDraw);
+        }, 500);
+      }
+    } catch (error) {
+      console.error('Error updating chessboard:', error);
     }
   }
 
