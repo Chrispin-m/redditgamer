@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Multiplayer Chess</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/chess.js@1.0.0-beta.6/dist/chess.min.js"></script>
+  <script src="https://unpkg.com/react-chessboard@4.4.0/dist/index.js"></script>
+</head>
+<body>
+  <h1>🎮 Multiplayer Chess</h1>
+  
+  <div id="players-info" class="status-display">🔄 Connecting...</div>
+  <div id="timer" class="timer-display" style="display: none;">⏰ 30s</div>
+  
+  <div class="instruction-box">
+    <p>
+      <strong>📋 How to Play:</strong> Classic chess rules apply. 
+      White moves first. Capture the opponent's king to win!
+      <br><strong>⏱️ You have 30 seconds per turn after first move. 🔄 Auto-refresh every 3s.</strong>
+    </p>
+  </div>
+
+  <div id="chess-container">
+    <div id="chessBoard"></div>
+  </div>
+  
+  <div id="chessStatus" class="status-display">🔄 Connecting...</div>
+  <button id="restartChess">🔄 Refresh Game</button>
+
+  <script src="script_chess.js"></script>
+</body>
+</html>

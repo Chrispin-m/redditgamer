@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta charset="UTF-8" />
+    <title>Multiplayer Gomoku</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <h1>🎮 Multiplayer Gomoku</h1>
+    
+    <div id="players-info" class="status-display">🔄 Connecting...</div>
+    <div id="timer" class="timer-display" style="display: none;">⏰ 30s</div>
+    
+    <div class="instruction-box">
+      <p>
+        <strong>📋 How to Play:</strong> Place stones on the 15×15 board. 
+        First to get five in a row (any direction) wins! Black moves first.
+        <br><strong>⏱️ You have 30 seconds per turn. 🔄 Auto-refresh every 3s.</strong>
+      </p>
+    </div>
+
+    <div id="gomokuBoard"></div>
+    
+    <div id="gomokuStatus" class="status-display">🔄 Connecting...</div>
+    <button id="gomokuRestart">🔄 Refresh Game</button>
+
+    <script type="application/javascript" src="script_gomoku.js"></script>
+  </body>
+</html>
