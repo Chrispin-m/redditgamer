@@ -643,9 +643,15 @@ Devvit.addCustomPostType({
                   </hstack>
                 </vstack>
                 
-                <text size="small" fontFamily="Open Sans" color={colors.secondary} textAlign="center">
-                  💡 Tip: You have 30 seconds per turn after first move! For Reaction game you have 20 seconds!
-                </text>
+                {/* Improved responsive tip text */}
+                <vstack gap="none" alignment="center middle">
+                  <text size="small" fontFamily="Open Sans" color={colors.secondary} textAlign="center">
+                    💡 Tip: 30 seconds per turn after first move!
+                  </text>
+                  <text size="small" fontFamily="Open Sans" color={colors.secondary} textAlign="center">
+                    Reaction game: 20 seconds per game!
+                  </text>
+                </vstack>
               </vstack>
             ) : (
               <vstack
