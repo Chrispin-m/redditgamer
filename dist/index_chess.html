@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Multiplayer Chess</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>🎮 Multiplayer Chess</h1>
+  
+  <div id="players-info" class="status-display">🔄 Connecting...</div>
+  <div id="timer" class="timer-display" style="display: none;">⏰ 30s</div>
+  
+  <div class="instruction-box">
+    <p>
+      <strong>📋 How to Play:</strong> Classic chess rules apply. 
+      White moves first. Click a piece to select, then click destination to move.
+      <br><strong>⏱️ You have 30 seconds per turn after first move. 🔄 Auto-refresh every 3s.</strong>
+    </p>
+  </div>
+
+  <div id="chess-container">
+    <div id="chessBoard"></div>
+  </div>
+  
+  <div id="chessStatus" class="status-display">🔄 Connecting...</div>
+  <button id="restartChess">🔄 Refresh Game</button>
+
+  <script src="script_chess.js"></script>
+</body>
+</html>
