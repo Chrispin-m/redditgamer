@@ -1,18 +1,18 @@
-/* Enhanced Global styling for a modern, beautiful UI with comprehensive light/dark mode support */
+/* Enhanced Global styling for modern, accessible UI with comprehensive light/dark mode support */
 * {
   box-sizing: border-box;
 }
 
 :root {
-  /* Light mode colors */
-  --bg-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --bg-secondary: rgba(255, 255, 255, 0.95);
-  --bg-tertiary: #ffffff;
-  --text-primary: #333333;
-  --text-secondary: #666666;
+  /* Light mode colors with improved contrast */
+  --bg-primary: linear-gradient(135deg, #4a6ee0 0%, #6a489c 100%);
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f8f9fa;
+  --text-primary: #222222;
+  --text-secondary: #444444;
   --text-light: #ffffff;
-  --text-muted: #888888;
-  --border-color: #dee2e6;
+  --text-muted: #666666;
+  --border-color: #ced4da;
   --border-dark: #000000;
   --shadow-light: rgba(0, 0, 0, 0.1);
   --shadow-medium: rgba(0, 0, 0, 0.2);
@@ -20,9 +20,11 @@
   --cell-bg: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
   --cell-hover: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   --modal-bg: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-  --leaderboard-bg: rgba(255, 255, 255, 0.95);
+  --leaderboard-bg: #ffffff;
   --table-stripe: #f8f9fa;
   --table-hover: #e9ecef;
+  --instruction-bg: #f8f9fa;
+  --instruction-text: #222222;
   
   /* Game-specific colors */
   --chess-light-square: #f0d9b5;
@@ -52,16 +54,16 @@
   --token-blue: linear-gradient(#0000ff, #006eff);
 }
 
-/* Dark mode colors */
+/* Dark mode colors with improved contrast */
 @media (prefers-color-scheme: dark) {
   :root {
     --bg-primary: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
-    --bg-secondary: rgba(45, 55, 72, 0.95);
+    --bg-secondary: #1a202c;
     --bg-tertiary: #2d3748;
     --text-primary: #e2e8f0;
-    --text-secondary: #a0aec0;
+    --text-secondary: #cbd5e0;
     --text-light: #ffffff;
-    --text-muted: #718096;
+    --text-muted: #a0aec0;
     --border-color: #4a5568;
     --border-dark: #ffffff;
     --shadow-light: rgba(0, 0, 0, 0.3);
@@ -70,9 +72,11 @@
     --cell-bg: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
     --cell-hover: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
     --modal-bg: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
-    --leaderboard-bg: rgba(45, 55, 72, 0.95);
+    --leaderboard-bg: #1a202c;
     --table-stripe: #2d3748;
     --table-hover: #4a5568;
+    --instruction-bg: #2d3748;
+    --instruction-text: #e2e8f0;
     
     /* Game-specific dark mode colors */
     --chess-light-square: #4a5568;
@@ -1112,10 +1116,10 @@ button:disabled {
   font-size: 0.9em;
 }
 
-/* Instruction boxes */
+/* Instruction boxes - FIXED CONTRAST ISSUE */
 .instruction-box {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  background: var(--instruction-bg);
+  color: var(--instruction-text);
   padding: clamp(12px, 2.5vw, 20px);
   margin: 15px auto;
   max-width: min(95vw, 500px);
@@ -1138,7 +1142,7 @@ button:disabled {
 }
 
 .instruction-box h3 {
-  color: var(--text-primary);
+  color: var(--instruction-text);
   margin-bottom: 10px;
 }
 
