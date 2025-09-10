@@ -13,6 +13,19 @@ Devvit.addCustomPostType({
   name: 'SocialGrid Games',
   height: 'tall',
   render: (context) => {
+    const theme = context.ui.theme; // Get current theme
+    const isDark = theme === 'dark';
+    
+    // Theme-aware colors
+    const colors = {
+      background: isDark ? '#1A1A1B' : '#F6F7F8',
+      text: isDark ? '#FFFFFF' : '#1A1A1B',
+      cardBg: isDark ? '#272729' : '#FFFFFF',
+      border: isDark ? '#343536' : '#EDEFF1',
+      primary: '#FF4500', // Reddit orange works in both themes
+      secondary: isDark ? '#DAE0E6' : '#878A8C'
+    };
+
     // Load the actual Reddit username once.
     const [username] = useState(async () => {
       const name = await context.reddit.getCurrentUsername();
@@ -68,6 +81,7 @@ Devvit.addCustomPostType({
                       username,
                       currentCounter: counter,
                       postId,
+                      theme: isDark ? 'dark' : 'light' // Pass theme to webview
                     },
                   });
                   break;
@@ -514,22 +528,22 @@ Devvit.addCustomPostType({
         <vstack
           grow
           padding="small"
-          backgroundGradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+          backgroundColor={colors.background}
         >
           <vstack grow alignment="middle center">
             {/* Enhanced Title */}
             <text
               size="xlarge"
               weight="bold"
-              color="#ffffff"
-              textShadow="2px 2px 4px rgba(0, 0, 0, 0.5)"
+              color={colors.text}
+              textShadow={isDark ? "2px 2px 4px rgba(0, 0, 0, 0.5)" : "2px 2px 4px rgba(0, 0, 0, 0.2)"}
               fontFamily="Roboto"
             >
               🎮 SocialGrid Games 🎮
             </text>
             <text
               size="medium"
-              color="#e8e8e8"
+              color={colors.secondary}
               fontFamily="Open Sans"
             >
               Multiplayer Games for Reddit
@@ -538,30 +552,30 @@ Devvit.addCustomPostType({
             
             {/* Enhanced User Info Card */}
             <vstack
-              backgroundColor="#ffffff"
+              backgroundColor={colors.cardBg}
               padding="medium"
               cornerRadius="medium"
-              shadow="0px 4px 12px rgba(0, 0, 0, 0.15)"
-              border="1px solid #e0e0e0"
+              shadow={isDark ? "0px 4px 12px rgba(0, 0, 0, 0.3)" : "0px 4px 12px rgba(0, 0, 0, 0.15)"}
+              border={`1px solid ${colors.border}`}
             >
               <hstack gap="small" alignment="center middle">
-                <text size="medium" fontFamily="Open Sans" color="#333">🧑‍💻 Player:</text>
-                <text size="medium" weight="bold" fontFamily="Open Sans" color="#FF4500">{username ?? ''}</text>
+                <text size="medium" fontFamily="Open Sans" color={colors.secondary}>🧑‍💻 Player:</text>
+                <text size="medium" weight="bold" fontFamily="Open Sans" color={colors.primary}>{username ?? ''}</text>
               </hstack>
               <hstack gap="small" alignment="center middle">
-                <text size="medium" fontFamily="Open Sans" color="#333">📊 Interactions:</text>
-                <text size="medium" weight="bold" fontFamily="Open Sans" color="#4CAF50">{counter ?? ''}</text>
+                <text size="medium" fontFamily="Open Sans" color={colors.secondary}>📊 Interactions:</text>
+                <text size="medium" weight="bold" fontFamily="Open Sans" color={colors.primary}>{counter ?? ''}</text>
               </hstack>
             </vstack>
             <spacer />
 
             {!selectedGame ? (
               <vstack alignment="middle center" gap="large">
-                <text size="large" weight="bold" fontFamily="Roboto" color="#ffffff" textShadow="1px 1px 2px rgba(0, 0, 0, 0.5)">
+                <text size="large" weight="bold" fontFamily="Roboto" color={colors.text}>
                   🎯 Choose Your Game
                 </text>
-                <text size="medium" fontFamily="Open Sans" color="#e8e8e8" textAlign="center">
-                  Select a multiplayer game to challenge other Reddit users!
+                <text size="medium" fontFamily="Open Sans" color={colors.secondary} textAlign="center">
+                  Select a game to challenge other Reddit users!
                 </text>
                 
                 {/* Enhanced Game Selection Grid */}
@@ -629,27 +643,33 @@ Devvit.addCustomPostType({
                   </hstack>
                 </vstack>
                 
-                <text size="small" fontFamily="Open Sans" color="#b8b8b8" textAlign="center">
-                  💡 Tip: You have 30 seconds per turn after first move! For Reaction game you have 20 seconds!
-                </text>
+                {/* Improved responsive tip text */}
+                <vstack gap="none" alignment="center middle">
+                  <text size="small" fontFamily="Open Sans" color={colors.secondary} textAlign="center">
+                    💡 Tip: 30 seconds per turn after first move!
+                  </text>
+                  <text size="small" fontFamily="Open Sans" color={colors.secondary} textAlign="center">
+                    Reaction game: 20 seconds per game!
+                  </text>
+                </vstack>
               </vstack>
             ) : (
               <vstack
                 alignment="middle center"
                 gap="medium"
-                backgroundColor="#ffffff"
+                backgroundColor={colors.cardBg}
                 padding="large"
                 cornerRadius="medium"
-                border="2px solid #667eea"
-                shadow="0px 6px 16px rgba(0, 0, 0, 0.2)"
+                border={`2px solid ${colors.primary}`}
+                shadow={isDark ? "0px 6px 16px rgba(0, 0, 0, 0.3)" : "0px 6px 16px rgba(0, 0, 0, 0.2)"}
               >
-                <text size="large" weight="bold" fontFamily="Roboto" color="#333">
+                <text size="large" weight="bold" fontFamily="Roboto" color={colors.text}>
                   🎮 {selectedGame.charAt(0).toUpperCase() + selectedGame.slice(1)}
                 </text>
-                <text size="medium" fontFamily="Open Sans" color="#666" textAlign="center">
+                <text size="medium" fontFamily="Open Sans" color={colors.secondary} textAlign="center">
                   {selectedGame === 'reaction' ? 'Click to start playing!' : 'Join to play - Wait for another player to join'}
                 </text>
-                <text size="small" fontFamily="Open Sans" color="#888" textAlign="center">
+                <text size="small" fontFamily="Open Sans" color={colors.secondary} textAlign="center">
                   {selectedGame === 'reaction' ? '⏱️ 20 seconds per game' : '⏱️ 30 seconds per turn after first move'}
                 </text>
                 <hstack gap="medium">
