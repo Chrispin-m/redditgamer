@@ -67,12 +67,12 @@ Devvit.addCustomPostType({
             const { redis } = context;
             const postId = context.postId!;
 
-            console.log('Received message:', message.type, message);
+            // console.log('Received message:', message.type, message);
 
             try {
               switch (message.type) {
                 case 'webViewReady':
-                  console.log('WebView ready, sending initial data...');
+                  // console.log('WebView ready, sending initial data...');
                   
                   // Send initial data to webview
                   webView.postMessage({
@@ -87,7 +87,7 @@ Devvit.addCustomPostType({
                   break;
 
                 case 'initializeGame': {
-                  console.log(`Initializing ${selectedGame} game...`);
+                  // console.log(`Initializing ${selectedGame} game...`);
                   
                   try {
                     // Initialize game state if it doesn't exist
@@ -99,7 +99,7 @@ Devvit.addCustomPostType({
                       const maxPlayers = gameType === 'reaction' ? 10 : 2;
                       await GameAPI.initializeGame(redis, postId, gameType, maxPlayers);
                       gameState = await GameAPI.getGameState(redis, postId);
-                      console.log('Game initialized:', gameState);
+                      // console.log('Game initialized:', gameState);
                     }
 
                     // Send current game state
@@ -108,7 +108,7 @@ Devvit.addCustomPostType({
                       data: gameState,
                     });
                   } catch (error) {
-                    console.error('Error initializing game:', error);
+                    // console.error('Error initializing game:', error);
                     webView.postMessage({
                       type: 'error',
                       code: 500,
@@ -120,14 +120,14 @@ Devvit.addCustomPostType({
                 }
 
                 case 'joinGame': {
-                  console.log(`Player ${username} attempting to join game`);
+                  // console.log(`Player ${username} attempting to join game`);
                   
                   try {
                     const gameState = await GameAPI.getGameState(redis, postId);
                     
                     // Check if player is already in the game
                     if (gameState.players.includes(username)) {
-                      console.log(`Player ${username} already in game`);
+                      // console.log(`Player ${username} already in game`);
                       
                       // Send updated game state to confirm they're in the game
                       webView.postMessage({
@@ -181,7 +181,7 @@ Devvit.addCustomPostType({
 
                     await GameAPI.saveGameState(redis, postId, gameState);
 
-                    console.log(`Player ${username} joined. Players: ${gameState.players.length}/${gameState.maxPlayers}`);
+                    // console.log(`Player ${username} joined. Players: ${gameState.players.length}/${gameState.maxPlayers}`);
 
                     // Send updated game state
                     webView.postMessage({
@@ -206,7 +206,7 @@ Devvit.addCustomPostType({
                       });
                     }
                   } catch (error) {
-                    console.error('Error joining game:', error);
+                    // console.error('Error joining game:', error);
                     webView.postMessage({
                       type: 'error',
                       code: 500,
@@ -218,7 +218,7 @@ Devvit.addCustomPostType({
                 }
 
                 case 'makeMove': {
-                  console.log(`Move attempt by ${username}:`, message.data);
+                  // console.log(`Move attempt by ${username}:`, message.data);
                   
                   try {
                     const { position, gameType } = message.data;
@@ -282,7 +282,7 @@ Devvit.addCustomPostType({
                     
                     await GameAPI.saveGameState(redis, postId, newState);
 
-                    console.log(`Move processed. New state:`, {
+                    // console.log(`Move processed. New state:`, {
                       turn: newState.turn,
                       status: newState.status,
                       winner: newState.winner
@@ -327,7 +327,7 @@ Devvit.addCustomPostType({
                       });
                     }
                   } catch (error) {
-                    console.error('Error making move:', error);
+                    // console.error('Error making move:', error);
                     webView.postMessage({
                       type: 'error',
                       code: 500,
@@ -383,14 +383,14 @@ Devvit.addCustomPostType({
                       });
                     }
                   } catch (error) {
-                    console.error('Error checking turn timer:', error);
+                    // console.error('Error checking turn timer:', error);
                   }
                   break;
                 }
 
                 case 'restartGame': {
                   try {
-                    console.log(`Restarting ${selectedGame} game...`);
+                    // console.log(`Restarting ${selectedGame} game...`);
                     
                     // Initialize new game state
                     const gameType = selectedGame as any;
@@ -404,7 +404,7 @@ Devvit.addCustomPostType({
                       data: gameState,
                     });
                   } catch (error) {
-                    console.error('Error restarting game:', error);
+                    // console.error('Error restarting game:', error);
                     webView.postMessage({
                       type: 'error',
                       code: 500,
@@ -423,7 +423,7 @@ Devvit.addCustomPostType({
                       data: gameState,
                     });
                   } catch (error) {
-                    console.error('Error requesting game state:', error);
+                    // console.error('Error requesting game state:', error);
                     webView.postMessage({
                       type: 'error',
                       code: 500,
@@ -463,7 +463,7 @@ Devvit.addCustomPostType({
                       },
                     });
                   } catch (error) {
-                    console.error('Error updating score:', error);
+                    // console.error('Error updating score:', error);
                     webView.postMessage({
                       type: 'error',
                       code: 500,
@@ -488,7 +488,7 @@ Devvit.addCustomPostType({
                       },
                     });
                   } catch (error) {
-                    console.error('Error getting reaction scores:', error);
+                    // console.error('Error getting reaction scores:', error);
                   }
                   break;
                 }
@@ -502,7 +502,7 @@ Devvit.addCustomPostType({
                       data: { currentCounter: message.data.newCounter },
                     });
                   } catch (error) {
-                    console.error('Error setting counter:', error);
+                    // console.error('Error setting counter:', error);
                     webView.postMessage({
                       type: 'error',
                       code: 500,
@@ -518,10 +518,10 @@ Devvit.addCustomPostType({
                   break;
 
                 default:
-                  console.warn(`Unknown message type:`, message);
+                  // console.warn(`Unknown message type:`, message);
               }
             } catch (error) {
-              console.error('Error handling message:', error);
+              // console.error('Error handling message:', error);
               webView.postMessage({
                 type: 'error',
                 code: 500,

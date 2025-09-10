@@ -20,7 +20,7 @@
 
   // Function to send messages to the parent Devvit app
   function sendMessage(message) {
-    console.log('Sending message:', message);
+    // console.log('Sending message:', message);
     window.parent.postMessage(message, '*');
   }
 
@@ -269,12 +269,12 @@
       message = message.data.message;
     }
     
-    console.log('Received message from parent:', message);
+    // console.log('Received message from parent:', message);
     
     switch (message.type) {
       case 'initialData':
         currentUsername = message.data.username;
-        console.log('Set username:', currentUsername);
+        // console.log('Set username:', currentUsername);
         if (playersElem) {
           playersElem.textContent = `👥 Player: ${currentUsername}`;
           playersElem.className = 'status-display';
@@ -284,7 +284,7 @@
         startAutoRefresh();
         
         setTimeout(() => {
-          console.log('Initializing game...');
+          // console.log('Initializing game...');
           sendMessage({ type: 'initializeGame' });
           // Get initial scores
           sendMessage({ type: 'getReactionScores' });
@@ -292,12 +292,12 @@
         break;
 
       case 'gameState':
-        console.log('Received game state:', message.data);
+        // console.log('Received game state:', message.data);
         
         // Auto-join if not already in the game
         if (message.data && message.data.players && !message.data.players.includes(currentUsername)) {
           setTimeout(() => {
-            console.log('Auto-joining game...');
+            // console.log('Auto-joining game...');
             sendMessage({
               type: 'joinGame',
               data: { username: currentUsername }
@@ -312,7 +312,7 @@
         break;
 
       case 'playerJoined':
-        console.log(`Player joined: ${message.data.username}`);
+        // console.log(`Player joined: ${message.data.username}`);
         // Update player info if available
         if (message.data.username === currentUsername && playersElem) {
           playersElem.textContent = `👥 Player: ${currentUsername} - Ready to play!`;
@@ -320,7 +320,7 @@
         break;
 
       case 'gameStarted':
-        console.log('Reaction game started!', message.data);
+        // console.log('Reaction game started!', message.data);
         // For reaction game, just ensure auto-refresh is running
         if (!refreshInterval) {
           startAutoRefresh();
@@ -328,14 +328,14 @@
         break;
 
       case 'scoreUpdate':
-        console.log('Score update received:', message.data);
+        // console.log('Score update received:', message.data);
         if (message.data.scores) {
           updateLeaderboard(message.data.scores);
         }
         break;
 
       case 'error':
-        console.error('Game error:', message.message);
+        // console.error('Game error:', message.message);
         if (playersElem) {
           playersElem.textContent = `❌ Error: ${message.message}`;
           playersElem.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';

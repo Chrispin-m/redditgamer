@@ -76,7 +76,7 @@ export const GamePostForm = Devvit.createForm(
       ui.navigateTo(post);
     } catch (error) {
       context.ui.showToast(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      console.error('Game creation error:', error);
+      // console.error('Game creation error:', error);
     }
   }
 );

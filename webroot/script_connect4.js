@@ -13,7 +13,7 @@
 
   // Function to send messages to the parent Devvit app
   function sendMessage(message) {
-    console.log('Sending message:', message);
+    // console.log('Sending message:', message);
     window.parent.postMessage(message, '*');
   }
 
@@ -265,21 +265,21 @@
       message = message.data.message;
     }
     
-    console.log('Received message from parent:', message);
+    // console.log('Received message from parent:', message);
     
     switch (message.type) {
       case 'initialData':
         currentUsername = message.data.username;
-        console.log('Set username:', currentUsername);
+        // console.log('Set username:', currentUsername);
         
         setTimeout(() => {
-          console.log('Initializing game...');
+          // console.log('Initializing game...');
           sendMessage({ type: 'initializeGame' });
         }, 100);
         break;
 
       case 'gameState':
-        console.log('Received game state:', message.data);
+        // console.log('Received game state:', message.data);
         gameState = message.data;
         gameActive = gameState.status === 'active';
         renderBoard();
@@ -289,7 +289,7 @@
         // Auto-join if not already in the game
         if (!gameState.players.includes(currentUsername)) {
           setTimeout(() => {
-            console.log('Auto-joining game...');
+            // console.log('Auto-joining game...');
             sendMessage({
               type: 'joinGame',
               data: { username: currentUsername }
@@ -303,7 +303,7 @@
         break;
 
       case 'playerJoined':
-        console.log(`Player joined: ${message.data.username}`);
+        // console.log(`Player joined: ${message.data.username}`);
         if (message.data.gameState) {
           gameState = message.data.gameState;
           gameActive = gameState.status === 'active';
@@ -320,7 +320,7 @@
         break;
 
       case 'gameStarted':
-        console.log('Game started!', message.data);
+        // console.log('Game started!', message.data);
         gameActive = true;
         if (message.data.gameState) {
           gameState = message.data.gameState;
@@ -338,7 +338,7 @@
 
       case 'gameUpdate':
       case 'moveMade':
-        console.log('Game updated:', message.data);
+        // console.log('Game updated:', message.data);
         if (message.data.gameState || message.data) {
           gameState = message.data.gameState || message.data;
           gameActive = gameState.status === 'active';
@@ -349,7 +349,7 @@
         break;
 
       case 'turnChanged':
-        console.log(`Turn changed to: ${message.data.currentTurn}`);
+        // console.log(`Turn changed to: ${message.data.currentTurn}`);
         updateStatus();
         break;
 
@@ -358,7 +358,7 @@
         break;
 
       case 'gameEnded':
-        console.log('Game ended:', message.data);
+        // console.log('Game ended:', message.data);
         gameActive = false;
         if (refreshInterval) clearInterval(refreshInterval);
         if (timerInterval) clearInterval(timerInterval);
@@ -377,7 +377,7 @@
         break;
 
       case 'error':
-        console.error('Game error:', message.message);
+        // console.error('Game error:', message.message);
         statusElem.textContent = `❌ Error: ${message.message}`;
         statusElem.className = 'status-display';
         statusElem.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';

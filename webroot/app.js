@@ -62,7 +62,7 @@
 
   // Update local state when a new game state is received.
   function handleGameState(newState) {
-    console.log('Received game state:', newState);
+    // console.log('Received game state:', newState);
     if (!newState) return;
     gameState = newState;
     renderGame();
@@ -109,7 +109,7 @@
 
   // Listen for messages from the parent Devvit app.
   window.addEventListener('message', (event) => {
-    console.log('Received message:', event.data);
+    // console.log('Received message:', event.data);
     if (event.data && event.data.type === 'gameState') {
       handleGameState(event.data.data);
     }

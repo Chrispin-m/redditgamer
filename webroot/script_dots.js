@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.yctns.length = 0;
                 this.gctns.length = 0;
                 if (this.count !== 6) this.type++;
-                console.log('Red');
+                // console.log('Red');
             } else if (this.type === 2) {
                 if (this.g.checker()) {
                     die.disabled = true;
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.bctns.length = 0;
                 this.yctns.length = 0;
                 if (this.count !== 6) this.type++;
-                console.log('Green');
+                // console.log('Green');
             } else if (this.type === 3) {
                 if (this.y.checker()) {
                     die.disabled = true;
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.bctns.length = 0;
                 this.gctns.length = 0;
                 if (this.count !== 6) this.type++;
-                console.log('Yellow');
+                // console.log('Yellow');
             } else if (this.type === 4) {
                 if (this.b.checker()) {
                     die.disabled = true;
@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.yctns.length = 0;
                 this.gctns.length = 0;
                 if (this.count !== 6) this.type = 1;
-                console.log('Blue');
+                // console.log('Blue');
             }
         }
     }
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         mover(RN, count) {
             this.y = RN.G_NO;
-            console.log(`Check: ${RN.move + count}`);
+            // console.log(`Check: ${RN.move + count}`);
             if (RN.move + count < 57) {
                 if (RN.j !== 0 && !RN.home) {
                     const totalCount = count + RN.j;
@@ -184,15 +184,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (i === 2) ck = this.mover(R2, roll.rctns[this.cnt]);
                 else if (i === 3) ck = this.mover(R3, roll.rctns[this.cnt]);
                 else if (i === 4) ck = this.mover(R4, roll.rctns[this.cnt]);
-                console.log(`Moved: ${ck}`);
+                // console.log(`Moved: ${ck}`);
                 if (ck) {
                     if (this.cnt === roll.rctns.length - 1) {
-                        console.log('last');
+                        // console.log('last');
                         document.getElementById('die').disabled = false;
                         roll.rctns.length = 0;
                         this.cnt = 0;
                     } else {
-                        console.log('not last');
+                        // console.log('not last');
                         this.cnt++;
                     }
                 }
@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
         x = null;
 
         mover(RN, count) {
-            console.log(`Check: ${RN.move + count}`);
+            // console.log(`Check: ${RN.move + count}`);
             this.y = RN.G_NO;
             if (RN.move + count < 57) {
                 if (RN.j !== 0 && !RN.home) {
@@ -281,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (i === 2) ck = this.mover(G2, roll.gctns[this.cnt]);
                 else if (i === 3) ck = this.mover(G3, roll.gctns[this.cnt]);
                 else if (i === 4) ck = this.mover(G4, roll.gctns[this.cnt]);
-                console.log(ck);
+                // console.log(ck);
                 if (ck) {
                     if (this.cnt === roll.gctns.length - 1) {
                         document.getElementById('die').disabled = false;
@@ -329,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
         x = null;
 
         mover(RN, count) {
-            console.log(`Check: ${RN.move + count}`);
+            // console.log(`Check: ${RN.move + count}`);
             this.y = RN.G_NO;
             if (RN.move + count < 57) {
                 if (RN.j !== 0 && !RN.home) {
@@ -376,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (i === 2) ck = this.mover(Y2, roll.yctns[this.cnt]);
                 else if (i === 3) ck = this.mover(Y3, roll.yctns[this.cnt]);
                 else if (i === 4) ck = this.mover(Y4, roll.yctns[this.cnt]);
-                console.log(ck);
+                // console.log(ck);
                 if (ck) {
                     if (this.cnt === roll.yctns.length - 1) {
                         document.getElementById('die').disabled = false;
@@ -424,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
         x = null;
 
         mover(RN, count) {
-            console.log(`Check: ${RN.move + count}`);
+            // console.log(`Check: ${RN.move + count}`);
             this.y = RN.G_NO;
             if (RN.move + count < 57) {
                 if (RN.j !== 0 && !RN.home) {
@@ -471,7 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (i === 2) ck = this.mover(B2, roll.bctns[this.cnt]);
                 else if (i === 3) ck = this.mover(B3, roll.bctns[this.cnt]);
                 else if (i === 4) ck = this.mover(B4, roll.bctns[this.cnt]);
-                console.log(ck);
+                // console.log(ck);
                 if (ck) {
                     if (this.cnt === roll.bctns.length - 1) {
                         document.getElementById('die').disabled = false;
