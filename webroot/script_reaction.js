@@ -293,6 +293,12 @@
 
       case 'gameState':
         console.log('Received game state:', message.data);
+        // For reaction game, we don't need complex game state management
+        // but we should still start auto-refresh for leaderboard updates
+        if (!refreshInterval) {
+          startAutoRefresh();
+        }
+        
         // Auto-join if not already in game
         if (message.data && message.data.players && !message.data.players.includes(currentUsername)) {
           setTimeout(() => {

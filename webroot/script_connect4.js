@@ -289,6 +289,7 @@
         if (gameActive) {
           startAutoRefresh();
           startTurnTimer();
+          startTurnTimer();
         }
         
         if (!gameState.players.includes(currentUsername)) {
