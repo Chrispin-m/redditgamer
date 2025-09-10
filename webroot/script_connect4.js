@@ -286,12 +286,7 @@
         updateStatus();
         updatePlayersInfo();
         
-        if (gameActive) {
-          startAutoRefresh();
-          startTurnTimer();
-          startTurnTimer();
-        }
-        
+        // Auto-join if not already in the game
         if (!gameState.players.includes(currentUsername)) {
           setTimeout(() => {
             console.log('Auto-joining game...');
@@ -299,7 +294,11 @@
               type: 'joinGame',
               data: { username: currentUsername }
             });
-          }, 200);
+          }, 300);
+        } else if (gameActive) {
+          // Only start timers if we're already in the game and it's active
+          startAutoRefresh();
+          startTurnTimer();
         }
         break;
 
@@ -307,9 +306,16 @@
         console.log(`Player joined: ${message.data.username}`);
         if (message.data.gameState) {
           gameState = message.data.gameState;
+          gameActive = gameState.status === 'active';
           renderBoard();
           updateStatus();
           updatePlayersInfo();
+          
+          // Start timers if game is active and we're in it
+          if (gameActive && gameState.players.includes(currentUsername)) {
+            startAutoRefresh();
+            startTurnTimer();
+          }
         }
         break;
 
@@ -321,6 +327,10 @@
           renderBoard();
           updateStatus();
           updatePlayersInfo();
+        }
+        
+        // Always start timers when game starts
+        if (gameActive && gameState && gameState.players.includes(currentUsername)) {
           startAutoRefresh();
           startTurnTimer();
         }

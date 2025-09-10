@@ -293,13 +293,8 @@
 
       case 'gameState':
         console.log('Received game state:', message.data);
-        // For reaction game, we don't need complex game state management
-        // but we should still start auto-refresh for leaderboard updates
-        if (!refreshInterval) {
-          startAutoRefresh();
-        }
         
-        // Auto-join if not already in game
+        // Auto-join if not already in the game
         if (message.data && message.data.players && !message.data.players.includes(currentUsername)) {
           setTimeout(() => {
             console.log('Auto-joining game...');
@@ -307,7 +302,28 @@
               type: 'joinGame',
               data: { username: currentUsername }
             });
-          }, 200);
+          }, 300);
+        }
+        
+        // Ensure auto-refresh is running for leaderboard updates
+        if (!refreshInterval) {
+          startAutoRefresh();
+        }
+        break;
+
+      case 'playerJoined':
+        console.log(`Player joined: ${message.data.username}`);
+        // Update player info if available
+        if (message.data.username === currentUsername && playersElem) {
+          playersElem.textContent = `👥 Player: ${currentUsername} - Ready to play!`;
+        }
+        break;
+
+      case 'gameStarted':
+        console.log('Reaction game started!', message.data);
+        // For reaction game, just ensure auto-refresh is running
+        if (!refreshInterval) {
+          startAutoRefresh();
         }
         break;
 
@@ -320,6 +336,11 @@
 
       case 'error':
         console.error('Game error:', message.message);
+        if (playersElem) {
+          playersElem.textContent = `❌ Error: ${message.message}`;
+          playersElem.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+          playersElem.style.color = 'white';
+        }
         break;
     }
   }

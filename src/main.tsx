@@ -128,9 +128,22 @@ Devvit.addCustomPostType({
                     // Check if player is already in the game
                     if (gameState.players.includes(username)) {
                       console.log(`Player ${username} already in game`);
+                      
+                      // Send updated game state to confirm they're in the game
                       webView.postMessage({
                         type: 'gameState',
                         data: gameState,
+                      });
+                      
+                      // Also send playerJoined confirmation
+                      webView.postMessage({
+                        type: 'playerJoined',
+                        data: {
+                          username,
+                          playerCount: gameState.players.length,
+                          maxPlayers: gameState.maxPlayers,
+                          gameState,
+                        },
                       });
                       return;
                     }
