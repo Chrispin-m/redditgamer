@@ -272,10 +272,8 @@
         currentUsername = message.data.username;
         // console.log('Set username:', currentUsername);
         
-        setTimeout(() => {
-          // console.log('Initializing game...');
-          sendMessage({ type: 'initializeGame' });
-        }, 100);
+        // console.log('Initializing game...');
+        sendMessage({ type: 'initializeGame' });
         break;
 
       case 'gameState':
@@ -288,13 +286,11 @@
         
         // Auto-join if not already in the game
         if (!gameState.players.includes(currentUsername)) {
-          setTimeout(() => {
-            // console.log('Auto-joining game...');
-            sendMessage({
-              type: 'joinGame',
-              data: { username: currentUsername }
-            });
-          }, 300);
+          // console.log('Auto-joining game...');
+          sendMessage({
+            type: 'joinGame',
+            data: { username: currentUsername }
+          });
         } else if (gameActive) {
           // Only start timers if we're already in the game and it's active
           startAutoRefresh();

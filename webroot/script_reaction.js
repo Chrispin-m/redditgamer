@@ -283,12 +283,10 @@
         // Start auto-refresh for leaderboard
         startAutoRefresh();
         
-        setTimeout(() => {
-          // console.log('Initializing game...');
-          sendMessage({ type: 'initializeGame' });
-          // Get initial scores
-          sendMessage({ type: 'getReactionScores' });
-        }, 100);
+        // console.log('Initializing game...');
+        sendMessage({ type: 'initializeGame' });
+        // Get initial scores
+        sendMessage({ type: 'getReactionScores' });
         break;
 
       case 'gameState':
@@ -296,13 +294,11 @@
         
         // Auto-join if not already in the game
         if (message.data && message.data.players && !message.data.players.includes(currentUsername)) {
-          setTimeout(() => {
-            // console.log('Auto-joining game...');
-            sendMessage({
-              type: 'joinGame',
-              data: { username: currentUsername }
-            });
-          }, 300);
+          // console.log('Auto-joining game...');
+          sendMessage({
+            type: 'joinGame',
+            data: { username: currentUsername }
+          });
         }
         
         // Ensure auto-refresh is running for leaderboard updates
