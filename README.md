@@ -112,9 +112,26 @@ A comprehensive multiplayer gaming platform built for Reddit using Devvit. Play 
 
 - **Auto-Refresh:** Games sync every 3 seconds
 - **Real-time Updates:** See opponent moves instantly
+- **Connection Resilience:** Automatic WebSocket reconnection with HTTP polling fallback
+- **Mobile App Support:** Works reliably in Reddit native mobile apps
 - **Error Handling:** Comprehensive error messages and recovery
 - **State Persistence:** Games continue even if you refresh
 - **Cross-Platform:** Works on all devices and browsers
+
+### Connection Technology
+
+The games use a hybrid connection approach for maximum reliability:
+
+1. **Primary:** Secure WebSocket (WSS) connections for real-time gameplay
+2. **Fallback:** HTTP polling when WebSocket connections fail (common in mobile apps)
+3. **Auto-Recovery:** Automatic reconnection attempts with exponential backoff
+4. **Status Indicators:** Clear visual feedback about connection quality
+
+**Connection Status Indicators:**
+- 🟢 **Connected (Real-time)** - WebSocket active, full real-time experience
+- 🟠 **Connected (Polling)** - HTTP fallback active, slightly delayed updates
+- 🟡 **Connecting...** - Attempting to establish connection
+- 🔴 **Disconnected** - No connection available, refresh recommended
 
 ## 🎨 User Interface
 
@@ -123,6 +140,7 @@ A comprehensive multiplayer gaming platform built for Reddit using Devvit. Play 
 - **Visual Feedback:** Clear indicators for turns, wins, and errors
 - **Celebration Effects:** Animated popups for game endings
 - **Professional Typography:** Clean, readable fonts throughout
+- **Connection Awareness:** Real-time connection status and quality indicators
 
 ## 🤝 Multiplayer Experience
 
@@ -131,6 +149,7 @@ A comprehensive multiplayer gaming platform built for Reddit using Devvit. Play 
 - **Turn Indicators:** Clear visual feedback for whose turn it is
 - **Game Restart:** Easy option to play again after games end
 - **Fair Play:** Turn timers ensure games don't stall
+- **Reliable Connectivity:** Multiple connection methods ensure games work everywhere
 
 ---
 

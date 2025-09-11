@@ -23,6 +23,20 @@
   let chessBoard = null;
   let gameHistory = [];
   let currentTurn = 'white';
+  
+  // Connection resilience variables
+  let connectionStatus = 'disconnected';
+  let wsRetryCount = 0;
+  let maxWsRetries = 5;
+  let wsRetryDelay = 1000;
+  let maxRetryDelay = 30000;
+  let wsRetryTimeout = null;
+  let wsConnectionTimeout = null;
+  let pollingInterval = null;
+  let wsReconnectInterval = null;
+  let gameServerUrl = 'wss://your-game-server.com';
+  let postId = null;
+  let socket = null;
 
   // Chess piece Unicode symbols
   const chessPieces = {

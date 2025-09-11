@@ -19,13 +19,29 @@
   let gameActive = false;
   let refreshInterval = null;
   let timerInterval = null;
+  
+  // Connection resilience variables
+  let connectionStatus = 'disconnected';
+  let wsRetryCount = 0;
+  let maxWsRetries = 5;
+  let wsRetryDelay = 1000;
+  let maxRetryDelay = 30000;
+  let wsRetryTimeout = null;
+  let wsConnectionTimeout = null;
+  let pollingInterval = null;
+  let wsReconnectInterval = null;
+  let gameServerUrl = 'wss://your-game-server.com';
+  let postId = null;
+  let socket = null;
 
   // Auto-refresh game state every 3 seconds
   function startAutoRefresh() {
     if (refreshInterval) clearInterval(refreshInterval);
     refreshInterval = setInterval(() => {
       if (gameActive && gameState && gameState.status === 'active') {
-        sendMessage({ type: 'requestGameState' });
+        if (connectionStatus === 'connected_ws') {
+          sendMessage({ type: 'requestGameState' });
+        }
         sendMessage({ type: 'checkTurnTimer' });
       }
     }, 3000);

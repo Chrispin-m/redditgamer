@@ -857,6 +857,37 @@ button:disabled {
   hyphens: auto;
 }
 
+/* Connection status specific styles */
+.connection-error {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  color: white;
+  border-left-color: #a71e2a;
+}
+
+.connection-connecting {
+  background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+  color: #333;
+  border-left-color: #d39e00;
+  animation: connectionPulse 2s infinite;
+}
+
+.connection-success {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border-left-color: #1e7e34;
+}
+
+.connection-polling {
+  background: linear-gradient(135deg, #fd7e14 0%, #e55a00 100%);
+  color: white;
+  border-left-color: #dc5200;
+}
+
+@keyframes connectionPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
 .timer-display {
   background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
   color: white;
