@@ -282,12 +282,12 @@ Devvit.addCustomPostType({
                     
                     await GameAPI.saveGameState(redis, postId, newState);
 
-                    // console.log(`Move processed. New state:`, {
+                    /* console.log(`Move processed. New state:`, {
                       turn: newState.turn,
                       status: newState.status,
                       winner: newState.winner
                     });
-
+*/
                     // Send updated game state
                     webView.postMessage({
                       type: 'gameUpdate',
