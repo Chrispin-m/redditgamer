@@ -1,4 +1,13 @@
 (function() {
+  // Send webViewReady immediately when script loads
+  function sendMessage(message) {
+    // console.log('Sending message:', message);
+    window.parent.postMessage(message, '*');
+  }
+  
+  // Notify parent immediately that web view is ready
+  sendMessage({ type: 'webViewReady' });
+
   const boardElem = document.getElementById('board');
   const statusElem = document.getElementById('status');
   const restartBtn = document.getElementById('restart');
@@ -10,12 +19,6 @@
   let gameActive = false;
   let refreshInterval = null;
   let timerInterval = null;
-
-  // Function to send messages to the parent Devvit app
-  function sendMessage(message) {
-    // console.log('Sending message:', message);
-    window.parent.postMessage(message, '*');
-  }
 
   // Auto-refresh game state every 3 seconds
   function startAutoRefresh() {
@@ -224,6 +227,7 @@
         
         // console.log('Initializing game...');
         sendMessage({ type: 'initializeGame' });
+        sendMessage({ type: 'requestGameState' });
         break;
 
       case 'gameState':
@@ -241,6 +245,7 @@
             type: 'joinGame',
             data: { username: currentUsername }
           });
+          sendMessage({ type: 'requestGameState' });
         } else if (gameActive) {
           // Only start timers if we're already in the game and it's active
           startAutoRefresh();
@@ -335,6 +340,11 @@
   // Add event listener
   window.addEventListener('message', handleMessage);
 
+  // Also listen for DOMContentLoaded to ensure early initialization
+  document.addEventListener('DOMContentLoaded', () => {
+    sendMessage({ type: 'webViewReady' });
+  });
+
   // Restart game
   restartBtn.addEventListener('click', () => {
     sendMessage({ type: 'requestGameState' });
@@ -343,9 +353,6 @@
   // Initialize
   statusElem.textContent = '🔄 Connecting...';
   statusElem.className = 'status-display';
-  
-  // Notify parent that web view is ready
-  sendMessage({ type: 'webViewReady' });
 
   // Make sendMessage available globally for modal buttons
   window.sendMessage = sendMessage;

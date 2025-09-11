@@ -1,4 +1,13 @@
 (function() {
+  // Send webViewReady immediately when script loads
+  function sendMessage(message) {
+    // console.log('Sending message:', message);
+    window.parent.postMessage(message, '*');
+  }
+  
+  // Notify parent immediately that web view is ready
+  sendMessage({ type: 'webViewReady' });
+
   // Element references.
   const boardElem = document.getElementById("reactionBoard");
   const startBtn = document.getElementById("startGame");
@@ -17,12 +26,6 @@
   let allScores = [];
   let currentPage = 0;
   const scoresPerPage = 5;
-
-  // Function to send messages to the parent Devvit app
-  function sendMessage(message) {
-    // console.log('Sending message:', message);
-    window.parent.postMessage(message, '*');
-  }
 
   // Auto-refresh leaderboard every 5 seconds
   function startAutoRefresh() {
@@ -285,6 +288,7 @@
         
         // console.log('Initializing game...');
         sendMessage({ type: 'initializeGame' });
+        sendMessage({ type: 'requestGameState' });
         // Get initial scores
         sendMessage({ type: 'getReactionScores' });
         break;
@@ -299,6 +303,7 @@
             type: 'joinGame',
             data: { username: currentUsername }
           });
+          sendMessage({ type: 'requestGameState' });
         }
         
         // Ensure auto-refresh is running for leaderboard updates
@@ -344,13 +349,15 @@
   // Add event listener
   window.addEventListener('message', handleMessage);
 
+  // Also listen for DOMContentLoaded to ensure early initialization
+  document.addEventListener('DOMContentLoaded', () => {
+    sendMessage({ type: 'webViewReady' });
+  });
+
   startBtn.addEventListener('click', startGame);
 
   // Initial render.
   renderBoard();
-  
-  // Notify parent that web view is ready
-  sendMessage({ type: 'webViewReady' });
 
   // Make sendMessage available globally for modal buttons
   window.sendMessage = sendMessage;
