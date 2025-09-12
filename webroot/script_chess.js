@@ -23,20 +23,6 @@
   let chessBoard = null;
   let gameHistory = [];
   let currentTurn = 'white';
-  
-  // Connection resilience variables
-  let connectionStatus = 'disconnected';
-  let wsRetryCount = 0;
-  let maxWsRetries = 5;
-  let wsRetryDelay = 1000;
-  let maxRetryDelay = 30000;
-  let wsRetryTimeout = null;
-  let wsConnectionTimeout = null;
-  let pollingInterval = null;
-  let wsReconnectInterval = null;
-  let gameServerUrl = 'wss://your-game-server.com';
-  let postId = null;
-  let socket = null;
 
   // Chess piece Unicode symbols
   const chessPieces = {
@@ -418,107 +404,6 @@
     return true;
   }
 
-  // Get all legal moves for a color
-  function getAllLegalMoves(board, color) {
-    const moves = [];
-    
-    for (let fromRow = 0; fromRow < 8; fromRow++) {
-      for (let fromCol = 0; fromCol < 8; fromCol++) {
-        const piece = board[fromRow][fromCol];
-        if (piece && getPieceColor(piece) === color) {
-          for (let toRow = 0; toRow < 8; toRow++) {
-            for (let toCol = 0; toCol < 8; toCol++) {
-              if (isValidMove(board, fromRow, fromCol, toRow, toCol, color)) {
-                moves.push({ from: [fromRow, fromCol], to: [toRow, toCol] });
-              }
-            }
-          }
-        }
-      }
-    }
-    
-    return moves;
-  }
-
-  // Check for checkmate
-  function isCheckmate(board, color) {
-    if (!isInCheck(board, color)) return false;
-    return getAllLegalMoves(board, color).length === 0;
-  }
-
-  // Check for stalemate
-  function isStalemate(board, color) {
-    if (isInCheck(board, color)) return false;
-    return getAllLegalMoves(board, color).length === 0;
-  }
-
-  // Check for insufficient material
-  function isInsufficientMaterial(board) {
-    const pieces = [];
-    for (let row = 0; row < 8; row++) {
-      for (let col = 0; col < 8; col++) {
-        const piece = board[row][col];
-        if (piece && piece.toLowerCase() !== 'k') {
-          pieces.push(piece.toLowerCase());
-        }
-      }
-    }
-    
-    // King vs King
-    if (pieces.length === 0) return true;
-    
-    // King and Bishop vs King or King and Knight vs King
-    if (pieces.length === 1 && (pieces[0] === 'b' || pieces[0] === 'n')) return true;
-    
-    // King and Bishop vs King and Bishop (same color squares)
-    if (pieces.length === 2 && pieces.every(p => p === 'b')) {
-      // This is a simplification - would need to check if bishops are on same color squares
-      return true;
-    }
-    
-    return false;
-  }
-
-  // Check for threefold repetition (simplified)
-  function isThreefoldRepetition() {
-    if (gameHistory.length < 8) return false;
-    
-    const currentPosition = boardToFEN(chessBoard);
-    let count = 0;
-    
-    for (const position of gameHistory) {
-      if (position === currentPosition) {
-        count++;
-        if (count >= 3) return true;
-      }
-    }
-    
-    return false;
-  }
-
-  // Convert board to FEN (simplified)
-  function boardToFEN(board) {
-    let fen = '';
-    for (let row = 0; row < 8; row++) {
-      let emptyCount = 0;
-      for (let col = 0; col < 8; col++) {
-        const piece = board[row][col];
-        if (piece) {
-          if (emptyCount > 0) {
-            fen += emptyCount;
-            emptyCount = 0;
-          }
-          fen += piece;
-        } else {
-          emptyCount++;
-        }
-      }
-      if (emptyCount > 0) fen += emptyCount;
-      if (row < 7) fen += '/';
-    }
-    return fen;
-  }
-
   // Initialize chess board
   function initializeChessBoard() {
     chessBoard = gameState && gameState.chess && gameState.chess.board 
@@ -726,29 +611,7 @@
     currentTurn = currentTurn === 'white' ? 'black' : 'white';
     
     // Add position to history
-    gameHistory.push(boardToFEN(chessBoard));
-    
-    // Check for game end conditions
-    let gameEndReason = null;
-    let winner = null;
-    let isDraw = false;
-    
-    if (isCheckmate(chessBoard, currentTurn)) {
-      gameEndReason = 'checkmate';
-      winner = currentTurn === 'white' ? gameState.players[1] : gameState.players[0];
-    } else if (isStalemate(chessBoard, currentTurn)) {
-      gameEndReason = 'stalemate';
-      isDraw = true;
-    } else if (isInsufficientMaterial(chessBoard)) {
-      gameEndReason = 'insufficient';
-      isDraw = true;
-    } else if (isThreefoldRepetition()) {
-      gameEndReason = 'repetition';
-      isDraw = true;
-    } else if (halfMoveClock >= 100) { // 50-move rule
-      gameEndReason = 'fifty-move';
-      isDraw = true;
-    }
+    gameHistory.push(`${from}-${to}`);
     
     renderBoard();
 
@@ -766,10 +629,7 @@
           castlingRights,
           enPassantTarget,
           halfMoveClock,
-          fullMoveNumber,
-          gameEndReason,
-          winner,
-          isDraw
+          fullMoveNumber
         },
         gameType: 'chess'
       }

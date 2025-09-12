@@ -19,29 +19,13 @@
   let gameActive = false;
   let refreshInterval = null;
   let timerInterval = null;
-  
-  // Connection resilience variables
-  let connectionStatus = 'disconnected'; // disconnected, connecting_ws, connected_ws, connecting_polling, connected_polling
-  let wsRetryCount = 0;
-  let maxWsRetries = 5;
-  let wsRetryDelay = 1000; // Start with 1 second
-  let maxRetryDelay = 30000; // Max 30 seconds
-  let wsRetryTimeout = null;
-  let wsConnectionTimeout = null;
-  let pollingInterval = null;
-  let wsReconnectInterval = null;
-  let gameServerUrl = 'wss://your-game-server.com'; // Replace with your actual server URL
-  let postId = null;
-  let socket = null;
 
   // Auto-refresh game state every 3 seconds
   function startAutoRefresh() {
     if (refreshInterval) clearInterval(refreshInterval);
     refreshInterval = setInterval(() => {
       if (gameActive && gameState && gameState.status === 'active') {
-        if (connectionStatus === 'connected_ws') {
-          sendMessage({ type: 'requestGameState' });
-        }
+        sendMessage({ type: 'requestGameState' });
         sendMessage({ type: 'checkTurnTimer' });
       }
     }, 3000);
@@ -55,282 +39,6 @@
     }, 1000);
   }
 
-  // Connection resilience functions
-  function updateConnectionStatus(status) {
-    connectionStatus = status;
-    updateConnectionUI();
-  }
-
-  function updateConnectionUI() {
-    let connectionText = '';
-    let connectionClass = 'status-display';
-    
-    switch (connectionStatus) {
-      case 'disconnected':
-        connectionText = '🔴 Disconnected - Please refresh';
-        connectionClass += ' connection-error';
-        break;
-      case 'connecting_ws':
-        connectionText = '🟡 Connecting via WebSocket...';
-        connectionClass += ' connection-connecting';
-        break;
-      case 'connected_ws':
-        connectionText = '🟢 Connected (Real-time)';
-        connectionClass += ' connection-success';
-        break;
-      case 'connecting_polling':
-        connectionText = '🟡 Connecting via HTTP...';
-        connectionClass += ' connection-connecting';
-        break;
-      case 'connected_polling':
-        connectionText = '🟠 Connected (Polling - limited real-time)';
-        connectionClass += ' connection-polling';
-        break;
-    }
-    
-    if (playersElem) {
-      playersElem.textContent = connectionText;
-      playersElem.className = connectionClass;
-    }
-  }
-
-  function connectWebSocket() {
-    if (wsRetryTimeout) {
-      clearTimeout(wsRetryTimeout);
-      wsRetryTimeout = null;
-    }
-    
-    if (wsConnectionTimeout) {
-      clearTimeout(wsConnectionTimeout);
-      wsConnectionTimeout = null;
-    }
-    
-    updateConnectionStatus('connecting_ws');
-    
-    try {
-      socket = new WebSocket(`${gameServerUrl}/game`);
-      
-      // Set connection timeout
-      wsConnectionTimeout = setTimeout(() => {
-        if (socket && socket.readyState === WebSocket.CONNECTING) {
-          socket.close();
-          handleWebSocketError(new Error('Connection timeout'));
-        }
-      }, 10000); // 10 second timeout
-      
-      socket.onopen = function(event) {
-        console.log('WebSocket Connected:', event);
-        if (wsConnectionTimeout) {
-          clearTimeout(wsConnectionTimeout);
-          wsConnectionTimeout = null;
-        }
-        
-        updateConnectionStatus('connected_ws');
-        wsRetryCount = 0; // Reset retry count on successful connection
-        wsRetryDelay = 1000; // Reset retry delay
-        
-        // Stop polling if it was active
-        stopPolling();
-        
-        // Initialize game
-        sendMessage({ type: 'initializeGame' });
-        sendMessage({ type: 'requestGameState' });
-      };
-      
-      socket.onerror = function(error) {
-        console.error('WebSocket Error:', error);
-        handleWebSocketError(error);
-      };
-      
-      socket.onclose = function(event) {
-        console.log('WebSocket Closed:', event);
-        if (wsConnectionTimeout) {
-          clearTimeout(wsConnectionTimeout);
-          wsConnectionTimeout = null;
-        }
-        
-        if (connectionStatus === 'connected_ws') {
-          // Connection was established but then lost
-          handleWebSocketError(new Error(`Connection lost: ${event.reason || 'Unknown reason'}`));
-        }
-      };
-      
-      socket.onmessage = function(event) {
-        // Handle messages through existing Devvit message system
-        try {
-          const data = JSON.parse(event.data);
-          handleMessage({ data: data });
-        } catch (e) {
-          console.error('Failed to parse WebSocket message:', e);
-        }
-      };
-      
-    } catch (error) {
-      handleWebSocketError(error);
-    }
-  }
-
-  function handleWebSocketError(error) {
-    console.error('WebSocket connection failed:', error);
-    
-    if (wsConnectionTimeout) {
-      clearTimeout(wsConnectionTimeout);
-      wsConnectionTimeout = null;
-    }
-    
-    wsRetryCount++;
-    
-    if (wsRetryCount <= maxWsRetries) {
-      // Retry WebSocket connection with exponential backoff
-      updateConnectionStatus('disconnected');
-      
-      wsRetryTimeout = setTimeout(() => {
-        connectWebSocket();
-      }, wsRetryDelay);
-      
-      // Exponential backoff
-      wsRetryDelay = Math.min(wsRetryDelay * 2, maxRetryDelay);
-      
-      console.log(`WebSocket retry ${wsRetryCount}/${maxWsRetries} in ${wsRetryDelay/1000}s`);
-    } else {
-      // Switch to polling fallback
-      console.log('WebSocket retries exhausted, switching to HTTP polling');
-      startPolling();
-    }
-  }
-
-  function startPolling() {
-    if (!postId) {
-      console.error('Cannot start polling: postId not available');
-      updateConnectionStatus('disconnected');
-      return;
-    }
-    
-    updateConnectionStatus('connecting_polling');
-    
-    // Initial poll
-    pollGameState().then(success => {
-      if (success) {
-        updateConnectionStatus('connected_polling');
-        
-        // Start regular polling
-        pollingInterval = setInterval(() => {
-          pollGameState().then(success => {
-            if (!success) {
-              // Polling failed, try to reconnect
-              stopPolling();
-              updateConnectionStatus('disconnected');
-              
-              // Try WebSocket again after a delay
-              wsRetryCount = 0;
-              wsRetryDelay = 1000;
-              wsRetryTimeout = setTimeout(() => {
-                connectWebSocket();
-              }, 5000);
-            }
-          });
-        }, 2000); // Poll every 2 seconds
-        
-        // Periodically try to re-establish WebSocket connection
-        wsReconnectInterval = setInterval(() => {
-          if (connectionStatus === 'connected_polling') {
-            console.log('Attempting to upgrade from polling to WebSocket...');
-            wsRetryCount = 0;
-            wsRetryDelay = 1000;
-            connectWebSocket();
-          }
-        }, 60000); // Try every 60 seconds
-        
-      } else {
-        updateConnectionStatus('disconnected');
-      }
-    });
-  }
-
-  function stopPolling() {
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
-      pollingInterval = null;
-    }
-    
-    if (wsReconnectInterval) {
-      clearInterval(wsReconnectInterval);
-      wsReconnectInterval = null;
-    }
-  }
-
-  async function pollGameState() {
-    try {
-      const response = await fetch(`${gameServerUrl.replace('wss://', 'https://')}/api/gamestate/${postId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'omit' // Don't send cookies for CORS simplicity
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      const gameStateData = await response.json();
-      
-      // Process the game state through existing handler
-      handleMessage({
-        data: {
-          type: 'gameState',
-          data: gameStateData
-        }
-      });
-      
-      return true;
-    } catch (error) {
-      console.error('Polling failed:', error);
-      return false;
-    }
-  }
-
-  function sendGameAction(action) {
-    if (connectionStatus === 'connected_ws' && socket && socket.readyState === WebSocket.OPEN) {
-      // Send via WebSocket
-      socket.send(JSON.stringify(action));
-    } else if (connectionStatus === 'connected_polling') {
-      // Send via HTTP POST
-      sendActionViaHTTP(action);
-    } else {
-      console.error('Cannot send action: not connected');
-      statusElem.textContent = '❌ Cannot make move: not connected';
-    }
-  }
-
-  async function sendActionViaHTTP(action) {
-    try {
-      const response = await fetch(`${gameServerUrl.replace('wss://', 'https://')}/api/action`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          postId: postId,
-          action: action
-        }),
-        credentials: 'omit'
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      // Poll for updated state after action
-      setTimeout(() => {
-        pollGameState();
-      }, 100);
-      
-    } catch (error) {
-      console.error('Failed to send action via HTTP:', error);
-      statusElem.textContent = `❌ Action failed: ${error.message}`;
-    }
-  }
   // Show win/loss modal
   function showGameEndModal(winner, isDraw, reason) {
     const modal = document.createElement('div');
@@ -453,7 +161,7 @@
   function updateTimer(timeRemaining, currentTurn) {
     if (!timerElem) return;
     
-    if (gameState && gameState.status === 'active' && gameState.players.length >= 2) {
+    if (gameState && gameState.status === 'active' && gameState.players.length >= 2 && gameState.firstMoveMade) {
       timerElem.style.display = 'block';
       timerElem.className = 'timer-display';
       timerElem.textContent = `⏰ ${timeRemaining}s - ${currentTurn}'s turn`;
@@ -472,20 +180,17 @@
   function updatePlayersInfo() {
     if (!gameState || !playersElem) return;
     
-    // Only update if not showing connection status
-    if (connectionStatus === 'connected_ws' && playersElem) {
-      playersElem.className = 'status-display';
+    playersElem.className = 'status-display';
     
-      if (gameState.players.length === 0) {
-        playersElem.textContent = '👥 No players yet';
-      } else {
-        const playersList = gameState.players.map((player, index) => {
-          const symbol = index === 0 ? 'X' : 'O';
-          const isCurrent = player === currentUsername;
-          return `${player} (${symbol})${isCurrent ? ' - You' : ''}`;
-        }).join(', ');
-        playersElem.textContent = `👥 Players: ${playersList}`;
-      }
+    if (gameState.players.length === 0) {
+      playersElem.textContent = '👥 No players yet';
+    } else {
+      const playersList = gameState.players.map((player, index) => {
+        const symbol = index === 0 ? 'X' : 'O';
+        const isCurrent = player === currentUsername;
+        return `${player} (${symbol})${isCurrent ? ' - You' : ''}`;
+      }).join(', ');
+      playersElem.textContent = `👥 Players: ${playersList}`;
     }
   }
 
@@ -495,21 +200,15 @@
     if (gameState.turn !== currentUsername) return;
     if (gameState.tictactoe[index]) return; // Cell already occupied
 
-    // Send move via appropriate connection method
-    const moveAction = {
+    // Send move to server
+    sendMessage({
       type: 'makeMove',
       data: {
         username: currentUsername,
         position: index,
         gameType: 'tictactoe'
       }
-    };
-    
-    if (connectionStatus === 'connected_ws') {
-      sendMessage(moveAction);
-    } else {
-      sendGameAction(moveAction);
-    }
+    });
   }
 
   // Handle messages from parent
@@ -524,11 +223,11 @@
     switch (message.type) {
       case 'initialData':
         currentUsername = message.data.username;
-        postId = message.data.postId;
         // console.log('Set username:', currentUsername);
         
-        // Start connection process
-        connectWebSocket();
+        // console.log('Initializing game...');
+        sendMessage({ type: 'initializeGame' });
+        sendMessage({ type: 'requestGameState' });
         break;
 
       case 'gameState':
@@ -542,17 +241,11 @@
         // Auto-join if not already in the game
         if (!gameState.players.includes(currentUsername)) {
           // console.log('Auto-joining game...');
-          const joinAction = {
+          sendMessage({
             type: 'joinGame',
             data: { username: currentUsername }
-          };
-          
-          if (connectionStatus === 'connected_ws') {
-            sendMessage(joinAction);
-            sendMessage({ type: 'requestGameState' });
-          } else {
-            sendGameAction(joinAction);
-          }
+          });
+          sendMessage({ type: 'requestGameState' });
         } else if (gameActive) {
           // Only start timers if we're already in the game and it's active
           startAutoRefresh();
@@ -654,17 +347,12 @@
 
   // Restart game
   restartBtn.addEventListener('click', () => {
-    if (connectionStatus === 'connected_ws') {
-      sendMessage({ type: 'requestGameState' });
-    } else {
-      pollGameState();
-    }
+    sendMessage({ type: 'requestGameState' });
   });
 
   // Initialize
   statusElem.textContent = '🔄 Connecting...';
   statusElem.className = 'status-display';
-  updateConnectionStatus('disconnected');
 
   // Make sendMessage available globally for modal buttons
   window.sendMessage = sendMessage;
